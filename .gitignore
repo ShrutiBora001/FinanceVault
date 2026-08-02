@@ -21,8 +21,10 @@ models/
 *.jsonl
 !eval/splits/*.jsonl
 
-# local notes
-debugging.md
+# local notes: one debug log per stage, e.g.
+#   docs/debugging/debugging_mvp1.md
+#   docs/debugging/debugging_mvp2.1.md
+docs/debugging/
 
 # os
 .DS_Store

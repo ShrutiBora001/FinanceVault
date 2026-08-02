@@ -1,0 +1,25 @@
+# python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# env / secrets
+.env
+.env.local
+
+# data + artifacts
+data/
+!data/.gitkeep
+eval/results/*.json
+!eval/results/.gitkeep
+adapters/
+models/
+*.jsonl
+!eval/splits/*.jsonl
+
+# os
+.DS_Store

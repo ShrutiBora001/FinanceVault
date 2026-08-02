@@ -1,0 +1,37 @@
+name: financevault
+
+# Ports are deliberately unusual (55432, 55433) because this host already runs Postgres
+# and Redis for several other projects; 5432/5433 and 6379 are all taken.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: fv_postgres
+    environment:
+      POSTGRES_USER: financevault
+      POSTGRES_PASSWORD: financevault
+      POSTGRES_DB: financevault
+    ports:
+      - "55432:5432"
+    volumes:
+      - fv_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U financevault -d financevault"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: fv_redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "55433:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  fv_pgdata:

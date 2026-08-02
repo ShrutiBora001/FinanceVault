@@ -12,12 +12,18 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 
-# Per-million-token prices, USD. Kept explicit rather than fetched so a run's cost is
-# reproducible from its journal months later, when list prices may have moved.
+# Per-million-token prices (input, output) in USD. Kept explicit rather than fetched so a
+# run's cost stays reproducible from its journal months later, when list prices may have moved.
+#
+# List prices, deliberately. Sonnet 5 carries introductory pricing of $2/$10 through
+# 2026-08-31; billing at list slightly overstates cost during that window rather than
+# understating it, and the project runs past the expiry. Cost per correct answer is a
+# headline metric, so it errs pessimistic.
 PRICES: dict[str, tuple[float, float]] = {
+    "claude-haiku-4-5": (1.00, 5.00),
     "claude-haiku-4-5-20251001": (1.00, 5.00),
     "claude-sonnet-5": (3.00, 15.00),
-    "claude-opus-5": (15.00, 75.00),
+    "claude-opus-5": (5.00, 25.00),
 }
 # Local models cost GPU time, not tokens; they are priced at zero here and accounted for
 # separately in the efficiency benchmark.

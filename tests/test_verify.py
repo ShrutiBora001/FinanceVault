@@ -103,6 +103,39 @@ def test_percentages_are_flagged_not_treated_as_amounts() -> None:
     assert numeric.extract_claims("Margin improved to 46.2%")[0].is_percent is True
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "fiscal year 2025",
+        "period ended September 27, 2025",
+        "the quarter ending 2025-09-27",
+        "for FY 2024",
+    ],
+)
+def test_dates_are_not_financial_claims(text: str) -> None:
+    """Answers state periods alongside figures; counting dates rejects correct answers."""
+    assert all(not c.is_financial for c in numeric.extract_claims(text)), text
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["$112.010 billion", "$416,161 million", "112010000000", "revenue of $30bn"],
+)
+def test_monetary_amounts_are_financial_claims(text: str) -> None:
+    claims = numeric.extract_claims(text)
+    assert claims and any(c.is_financial for c in claims), text
+
+
+def test_a_real_answer_scores_full_marks_despite_its_dates(evidence: Evidence) -> None:
+    """Regression: this exact phrasing scored 0.25 before dates were excluded."""
+    answer = (
+        "Apple's net income for fiscal year 2025 (period ended September 27, 2025) "
+        f"was ${NET_INCOME:,.0f}."
+    )
+    s = numeric.score(answer, evidence=evidence)
+    assert s.score == 1.0, s.reason
+
+
 def test_multiple_claims_are_all_extracted() -> None:
     assert len(numeric.extract_claims("Revenue $416.16 billion, up from $391.04 billion")) == 2
 

@@ -154,13 +154,17 @@ def execute(
 
         started = time.monotonic()
         try:
+            # Thinking on, with headroom. max_tokens bounds thinking and response text
+            # together, so a tight budget here would truncate mid-tool-call.
             completion = llm.call(
                 model,
                 messages,
                 ledger=ledger,
                 tools=specs,
                 system=SYSTEM,
-                max_tokens=1024,
+                thinking=True,
+                effort=cfg.analyst_effort,
+                max_tokens=4096,
                 label=f"step-{len(run.steps)}",
             )
         except BudgetExceeded:

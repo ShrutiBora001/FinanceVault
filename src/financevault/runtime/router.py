@@ -66,12 +66,16 @@ def route(question: str, *, ledger: Ledger, model: str | None = None) -> Route:
     P4 is the path that can answer anything. The fallback is recorded in `reason` so it shows
     up in the metrics rather than hiding as a normal P4.
     """
+    # Thinking stays off and the budget stays small: this is a one-token classification, and
+    # max_tokens caps thinking plus output together, so an adaptive-thinking router would
+    # spend its whole budget reasoning and return nothing.
     completion = llm.call(
         model or settings().judge_model,
         [{"role": "user", "content": f"Question: {question}\n\nPath:"}],
         ledger=ledger,
         system=RUBRIC,
-        max_tokens=8,
+        thinking=False,
+        max_tokens=16,
         label="router",
     )
 

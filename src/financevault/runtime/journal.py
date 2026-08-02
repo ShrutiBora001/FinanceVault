@@ -36,6 +36,13 @@ class ReplayMiss(RuntimeError):
     """
 
 
+# Determinism note. Sampling parameters were removed from current models, so a request cannot
+# be pinned to temperature 0 and two live calls with identical inputs may differ. F1 therefore
+# measures what it can actually guarantee: that the *key* is stable, so a replayed run resolves
+# to the same journal rows and reproduces byte-for-byte. It is not a claim about model
+# reproducibility, and the report must not present it as one.
+
+
 def canonical(payload: Any) -> str:
     """Stable JSON: sorted keys, no incidental whitespace, escaped non-ASCII."""
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
@@ -47,15 +54,19 @@ def key(
     *,
     tools: list[dict] | None = None,
     system: str | None = None,
-    temperature: float = 0.0,
+    thinking: dict | None = None,
+    effort: str | None = None,
     max_tokens: int = 1024,
     extra: dict | None = None,
 ) -> str:
     """The content address of a request.
 
-    `extra` carries anything else that steers generation (a seed, a stop sequence). It is a
-    named parameter rather than free kwargs so that adding a knob without threading it into
-    the key is a visible omission rather than an invisible one.
+    Note there is no `temperature`: current models reject sampling parameters outright, so
+    the key covers `thinking` and `effort` instead -- the knobs that actually steer output now.
+
+    `extra` carries anything else that steers generation. It is a named parameter rather than
+    free kwargs so that adding a knob without threading it into the key is a visible omission
+    rather than an invisible one.
     """
     request = {
         "scheme": SCHEME,
@@ -63,7 +74,8 @@ def key(
         "system": system,
         "messages": messages,
         "tools": tools or [],
-        "temperature": temperature,
+        "thinking": thinking,
+        "effort": effort,
         "max_tokens": max_tokens,
         "extra": extra or {},
     }

@@ -39,7 +39,7 @@ def test_key_is_insensitive_to_dict_ordering() -> None:
 
 
 def test_key_changes_with_every_parameter_that_steers_output() -> None:
-    base = journal.key("m", MESSAGES, tools=TOOLS, system="s", temperature=0.0, max_tokens=100)
+    base = journal.key("m", MESSAGES, tools=TOOLS, system="s", max_tokens=100)
     variants = {
         "model": journal.key("m2", MESSAGES, tools=TOOLS, system="s", max_tokens=100),
         "messages": journal.key(
@@ -47,8 +47,11 @@ def test_key_changes_with_every_parameter_that_steers_output() -> None:
         ),
         "tools": journal.key("m", MESSAGES, tools=[], system="s", max_tokens=100),
         "system": journal.key("m", MESSAGES, tools=TOOLS, system="other", max_tokens=100),
-        "temperature": journal.key(
-            "m", MESSAGES, tools=TOOLS, system="s", temperature=1.0, max_tokens=100
+        "thinking": journal.key(
+            "m", MESSAGES, tools=TOOLS, system="s", thinking={"type": "adaptive"}, max_tokens=100
+        ),
+        "effort": journal.key(
+            "m", MESSAGES, tools=TOOLS, system="s", effort="high", max_tokens=100
         ),
         "max_tokens": journal.key("m", MESSAGES, tools=TOOLS, system="s", max_tokens=200),
         "extra": journal.key(
@@ -65,7 +68,7 @@ def test_keys_are_distinct_across_variants() -> None:
         journal.key("m", MESSAGES),
         journal.key("m", MESSAGES, system="s"),
         journal.key("m", MESSAGES, tools=TOOLS),
-        journal.key("m", MESSAGES, temperature=0.5),
+        journal.key("m", MESSAGES, effort="low"),
     }
     assert len(keys) == 4
 
@@ -152,7 +155,7 @@ def test_replay_hit_costs_nothing(db: bool, monkeypatch: pytest.MonkeyPatch) -> 
 
     messages = [{"role": "user", "content": "cached question"}]
     model = "claude-haiku-4-5-20251001"
-    hash_ = journal.key(model, messages, temperature=0.0, max_tokens=1024)
+    hash_ = journal.key(model, messages, thinking={"type": "disabled"}, max_tokens=4096)
     journal.put(
         hash_,
         model,

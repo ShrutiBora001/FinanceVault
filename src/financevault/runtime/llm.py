@@ -69,22 +69,30 @@ def call(
     ledger: Ledger,
     tools: list[dict] | None = None,
     system: str | None = None,
-    temperature: float = 0.0,
-    max_tokens: int = 1024,
+    thinking: bool = False,
+    effort: str | None = None,
+    max_tokens: int = 4096,
     label: str = "",
 ) -> Completion:
     """One model call, journalled and charged.
 
-    Temperature defaults to 0. Sampling at temperature would make the journal key correct but
-    useless — the same request would legitimately produce different output, and the F1
-    determinism metric would measure sampling noise instead of pipeline stability.
+    **No sampling parameters.** Current models reject `temperature`, `top_p` and `top_k` with
+    a 400; behaviour is steered by prompting and `effort` instead.
+
+    **Thinking is opt-in here, and off by default.** Omitting the parameter would let the
+    model think adaptively, and `max_tokens` caps thinking *plus* response text -- so a short
+    call like the router's would spend its whole budget thinking and return nothing. Callers
+    that want thinking ask for it and size `max_tokens` accordingly.
     """
+    thinking_cfg = {"type": "adaptive"} if thinking else {"type": "disabled"}
+
     hash_ = journal.key(
         model,
         messages,
         tools=tools,
         system=system,
-        temperature=temperature,
+        thinking=thinking_cfg,
+        effort=effort,
         max_tokens=max_tokens,
     )
 
@@ -124,13 +132,16 @@ def call(
     request: dict[str, Any] = {
         "model": model,
         "messages": messages,
-        "temperature": temperature,
         "max_tokens": max_tokens,
+        "thinking": thinking_cfg,
     }
     if system:
         request["system"] = system
     if tools:
         request["tools"] = tools
+    if effort:
+        # effort lives inside output_config, not at the top level.
+        request["output_config"] = {"effort": effort}
 
     response = _client().messages.create(**request).model_dump(mode="json")
     latency_ms = int((time.monotonic() - started) * 1000)

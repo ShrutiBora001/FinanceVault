@@ -14,10 +14,14 @@ class Settings(BaseSettings):
     pg_dsn: str = "postgresql://financevault:financevault@localhost:55432/financevault"
     redis_url: str = "redis://localhost:55433/0"
 
-    # models
+    # Models. Aliases, not dated snapshots -- the alias is the documented form.
     anthropic_api_key: str = ""
-    judge_model: str = "claude-haiku-4-5-20251001"
+    judge_model: str = "claude-haiku-4-5"
     analyst_model: str = "claude-sonnet-5"
+    # Effort controls thinking depth and overall spend; it defaults to `high` server-side,
+    # which is more than a bounded tool loop needs. Kept configurable so the efficiency
+    # benchmark can sweep it rather than guess.
+    analyst_effort: str = "medium"
     embed_model: str = "BAAI/bge-small-en-v1.5"
     embed_dim: int = 384
 

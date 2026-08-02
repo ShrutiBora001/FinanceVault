@@ -75,11 +75,21 @@ NUMBER_RE = re.compile(
 SCALE_FACTORS = (1e3, 1e6, 1e9, 1e-3, 1e-6, 1e-9)
 
 
+MONTHS = (
+    "january|february|march|april|may|june|july|august|september|october|november|december"
+    "|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec"
+)
+# A number is a date part if a month name sits just before it, or if it is inside an ISO date.
+DATE_CONTEXT_RE = re.compile(rf"(?:{MONTHS})\.?\s*$", re.IGNORECASE)
+ISO_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
 @dataclass(frozen=True, slots=True)
 class Claim:
     text: str
     value: float
     is_percent: bool
+    is_financial: bool = True
 
 
 @dataclass(slots=True)
@@ -201,20 +211,55 @@ def _exists_on_record(value: float, cik: str, as_of: AsOf) -> bool:
     return row is not None
 
 
+def _is_financial(text: str, match: re.Match, raw: str, has_scale: bool) -> bool:
+    """Whether a matched number is a monetary amount rather than a date or ordinal.
+
+    Necessary because answers state periods alongside figures -- "net income for fiscal year
+    2025 (period ended September 27, 2025) was $112.010 billion" contains one financial claim
+    and three date parts. Counting the dates dropped a fully correct answer to 0.25, so a
+    verifier without this rejects correct trajectories on sight.
+
+    A number is financial if it is marked as money -- a currency symbol, a scale word, comma
+    grouping -- or is simply too large to be anything else.
+    """
+    if ISO_DATE_RE.search(text[max(0, match.start() - 2) : match.end() + 8]):
+        return False
+    if DATE_CONTEXT_RE.search(text[max(0, match.start() - 12) : match.start()]):
+        return False
+
+    marked_as_money = "$" in match.group(0) or has_scale or "," in raw
+    if marked_as_money:
+        return True
+
+    # Unmarked: a bare four-digit number in calendar range is a year, not an amount.
+    if re.fullmatch(r"\d{4}", raw) and 1900 <= float(raw) <= 2100:
+        return False
+    # Otherwise only large bare numbers are plausible amounts; "27" is not.
+    return len(raw.replace(".", "").lstrip("0")) >= 6
+
+
 def extract_claims(text: str) -> list[Claim]:
     """Pull numeric claims from an answer, resolving scale words into the value."""
+    text = text or ""
     claims: list[Claim] = []
-    for match in NUMBER_RE.finditer(text or ""):
+    for match in NUMBER_RE.finditer(text):
+        raw = match.group("num")
         try:
-            value = float(match.group("num").replace(",", ""))
+            value = float(raw.replace(",", ""))
         except ValueError:
             continue
-        if scale_word := (match.group("scale") or "").lower():
+        scale_word = (match.group("scale") or "").lower()
+        if scale_word:
             value *= SCALE_WORDS[scale_word]
         if match.group("sign"):
             value = -value
         claims.append(
-            Claim(text=match.group(0).strip(), value=value, is_percent=bool(match.group("pct")))
+            Claim(
+                text=match.group(0).strip(),
+                value=value,
+                is_percent=bool(match.group("pct")),
+                is_financial=_is_financial(text, match, raw, bool(scale_word)),
+            )
         )
     return claims
 
@@ -245,9 +290,10 @@ def score(
 ) -> Signal:
     """Fraction of an answer's numeric claims that trace to retrieved evidence."""
     claims = extract_claims(answer)
-    # Percentages are derived rather than reported, so they are not in xbrl_facts. Verifying
-    # them requires re-deriving from operands, which belongs to a later derived-value check.
-    checkable = [c for c in claims if not c.is_percent]
+    # Two exclusions. Percentages are derived rather than reported, so they are not in
+    # xbrl_facts -- verifying them means re-deriving from operands, which belongs to a later
+    # derived-value check. Dates and ordinals are not claims about money at all.
+    checkable = [c for c in claims if not c.is_percent and c.is_financial]
     if stated_value is not None:
         checkable.append(Claim(f"value={stated_value:g}", stated_value, is_percent=False))
 

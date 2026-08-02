@@ -84,6 +84,36 @@ CREATE TABLE IF NOT EXISTS prices (
     PRIMARY KEY (ticker, date)
 );
 
+-- ---------------------------------------------------------------- as-of views
+
+-- The SQL tool executes agent-written queries, so it cannot be trusted to apply its own
+-- point-in-time filter. These views apply it in the database, reading the horizon from a
+-- session variable that the tool sets per call.
+--
+-- `current_setting('fv.as_of')` with no second argument RAISES when the variable is unset,
+-- which is the point: an unfiltered query fails closed rather than silently returning the
+-- whole corpus. The SQL tool exposes only these views, never the base tables.
+
+CREATE OR REPLACE VIEW v_filings AS
+    SELECT * FROM filings
+    WHERE accepted_at <= current_setting('fv.as_of')::timestamptz;
+
+CREATE OR REPLACE VIEW v_xbrl_facts AS
+    SELECT * FROM xbrl_facts
+    WHERE accepted_at <= current_setting('fv.as_of')::timestamptz;
+
+CREATE OR REPLACE VIEW v_chunks AS
+    SELECT c.*, f.cik, f.form, f.period_end, f.accepted_at
+    FROM chunks c JOIN filings f ON f.id = c.filing_id
+    WHERE f.accepted_at <= current_setting('fv.as_of')::timestamptz;
+
+-- Prices have no acceptance instant: a daily bar for date D is knowable at D's close.
+-- adj_close is excluded because later splits and dividends rewrite it retroactively, which
+-- makes it unsafe to read at a historical horizon.
+CREATE OR REPLACE VIEW v_prices AS
+    SELECT ticker, date, open, high, low, close, volume FROM prices
+    WHERE date <= (current_setting('fv.as_of')::timestamptz)::date;
+
 -- ---------------------------------------------------------------- trajectories
 
 -- One agent episode. `as_of` is recorded on the run so a trajectory can be replayed or

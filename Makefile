@@ -54,6 +54,9 @@ redis-cli:  ## open a redis shell
 migrate:  ## apply schema.sql and print row counts (idempotent)
 	$(PY) scripts/migrate.py
 
+ingest:  ## fetch filings, chunks, XBRL facts and prices (TICKERS=AAPL by default)
+	$(PY) scripts/ingest.py --tickers $(or $(TICKERS),AAPL)
+
 reset:  ## DESTRUCTIVE: drop the postgres volume and re-migrate from empty
 	$(COMPOSE) down -v
 	$(MAKE) up

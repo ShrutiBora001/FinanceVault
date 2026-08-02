@@ -62,7 +62,11 @@ CREATE TABLE IF NOT EXISTS xbrl_facts (
     accession     TEXT,
     accepted_at   TIMESTAMPTZ NOT NULL,
     frame         TEXT,
-    UNIQUE (accession, taxonomy, tag, unit, period_start, period_end)
+    -- NULLS NOT DISTINCT is load-bearing, not stylistic. Instant facts (balance-sheet
+    -- items) have no period_start, and under the default NULLS DISTINCT every re-ingest
+    -- would insert them again -- ON CONFLICT never fires because NULL <> NULL. Requires
+    -- Postgres 15+.
+    UNIQUE NULLS NOT DISTINCT (accession, taxonomy, tag, unit, period_start, period_end)
 );
 CREATE INDEX IF NOT EXISTS xbrl_cik_tag_idx     ON xbrl_facts (cik, tag);
 CREATE INDEX IF NOT EXISTS xbrl_period_end_idx  ON xbrl_facts (period_end);

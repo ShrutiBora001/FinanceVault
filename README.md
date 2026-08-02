@@ -24,7 +24,7 @@ fine-tuning data than filtering on final-answer correctness, at equal trajectory
 
 ## Status
 
-MVP1, days 1–2 complete: repo skeleton, container stack, and the seven-table schema.
+Repo skeleton, container stack, and the seven-table schema are in place.
 
 ## Quick start
 

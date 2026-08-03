@@ -130,7 +130,14 @@ class Evidence:
 
 
 def _walk_numbers(node: Any, evidence: Evidence, source: str) -> None:
-    """Collect every numeric leaf from a tool observation."""
+    """Collect every numeric leaf from a tool observation.
+
+    Strings are walked too, not just structured `value` fields. A figure quoted in a
+    retrieved passage is genuinely retrieved evidence — and skipping it silently penalised
+    text retrieval, which made the RAG baseline look far worse on D2 than it is. A verifier
+    that handicaps the baseline biases the comparison toward the system under test, which is
+    the one direction a measurement must never lean.
+    """
     if isinstance(node, dict):
         value = node.get("value")
         if isinstance(value, int | float) and not isinstance(value, bool):
@@ -141,12 +148,17 @@ def _walk_numbers(node: Any, evidence: Evidence, source: str) -> None:
                 period_end=node.get("period_end"),
                 unit=node.get("unit"),
             )
-            return
-        for item in node.values():
-            _walk_numbers(item, evidence, source)
+            # Fall through: sibling text on the same row may carry figures too.
+        for key, item in node.items():
+            if key != "value":
+                _walk_numbers(item, evidence, source)
     elif isinstance(node, list):
         for item in node:
             _walk_numbers(item, evidence, source)
+    elif isinstance(node, str):
+        for claim in extract_claims(node):
+            if claim.is_financial and not claim.is_percent:
+                evidence.add(claim.value, source=f"{source}:text")
     elif isinstance(node, int | float) and not isinstance(node, bool):
         evidence.add(node, source=source)
 
@@ -189,6 +201,20 @@ def classify(
             return "exact", row
         for factor in SCALE_FACTORS:
             if _close(value * factor, row["value"]):
+                # Scale checking is strict for structured facts and tolerant for text.
+                #
+                # An XBRL fact carries its unit, so a magnitude mismatch against one is a real
+                # error. A figure lifted from filing prose does not: statements are tabulated
+                # "in millions", and that context lives in a column header the extractor never
+                # sees. Treating `$112,010 million` as a 1e6 error against a passage reading
+                # `112,010` would penalise a correct unit conversion.
+                #
+                # The cost is real and worth stating plainly: the off-by-1000 detection that
+                # motivates this whole signal holds only for structured evidence. Answers
+                # grounded solely in retrieved prose get a weaker check. Recovering it needs
+                # table-unit parsing, which is MVP2.1 work.
+                if str(row.get("source", "")).endswith(":text"):
+                    return "exact", {**row, "scale_tolerated": factor}
                 scale_hit = scale_hit or {**row, "implied_factor": factor}
                 break
 

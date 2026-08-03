@@ -1,0 +1,50 @@
+{
+  "replay": false,
+  "analyst_model": "claude-haiku-4-5",
+  "judge_model": "claude-haiku-4-5",
+  "n_questions": 20,
+  "journal_spend_usd": 0.33129,
+  "policies": [
+    {
+      "policy": "b1-rag",
+      "n": 20,
+      "d1_accuracy": 0.35,
+      "d2_unsupported_claim_rate": 0.1592,
+      "d3_step_pass_rate": 0.2,
+      "e1_cost_per_correct": 0.013223,
+      "e2_p50_latency_ms": 2246,
+      "e2_p95_latency_ms": 3608,
+      "total_list_usd": 0.092562,
+      "total_spent_usd": 0.079128,
+      "mean_steps": 2.0,
+      "outcomes": {
+        "ok": 20
+      },
+      "accuracy_by_archetype": {
+        "delta": 0.6667,
+        "lookup": 0.2143
+      }
+    },
+    {
+      "policy": "b2-tools",
+      "n": 20,
+      "d1_accuracy": 1.0,
+      "d2_unsupported_claim_rate": 0.0,
+      "d3_step_pass_rate": 0.8103,
+      "e1_cost_per_correct": 0.010891,
+      "e2_p50_latency_ms": 6916,
+      "e2_p95_latency_ms": 12290,
+      "total_list_usd": 0.217825,
+      "total_spent_usd": 0.191368,
+      "mean_steps": 2.9,
+      "outcomes": {
+        "ok": 17,
+        "no_tool_call": 3
+      },
+      "accuracy_by_archetype": {
+        "delta": 1.0,
+        "lookup": 1.0
+      }
+    }
+  ]
+}

@@ -16,8 +16,8 @@ env.md
 # data + artifacts
 data/
 !data/.gitkeep
-eval/results/*.json
-!eval/results/.gitkeep
+# Result tables are the stage's evidence, so they are committed.
+!eval/results/mvp1*.json
 adapters/
 models/
 *.jsonl

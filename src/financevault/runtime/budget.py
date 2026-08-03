@@ -60,7 +60,15 @@ class Ledger:
     max_steps: int
     max_seconds: float = 300.0
 
+    # `usd` is what this run actually spent; a journal hit costs nothing and is the whole
+    # point of replay. `list_usd` is what the same run would cost on a cold journal.
+    #
+    # Both are needed, and conflating them corrupts a metric. E1 (cost per correct answer) is
+    # a property of the *policy* and must use list cost, or re-running an already-journalled
+    # sweep reports every policy as free. F2 (sweep cost with replay versus without) is a
+    # property of the *harness* and must use actual cost, or the replay saving disappears.
     usd: float = 0.0
+    list_usd: float = 0.0
     tokens_in: int = 0
     tokens_out: int = 0
     steps: int = 0
@@ -105,8 +113,10 @@ class Ledger:
         A journal hit costs nothing, which is the entire point of replay: the same
         trajectory re-runs for $0.00 and the ledger says so rather than being told so.
         """
-        cost = 0.0 if cached else price(model, tokens_in, tokens_out)
+        list_cost = price(model, tokens_in, tokens_out)
+        cost = 0.0 if cached else list_cost
         self.usd += cost
+        self.list_usd += list_cost
         self.tokens_in += tokens_in
         self.tokens_out += tokens_out
         self.entries.append(
@@ -132,6 +142,7 @@ class Ledger:
         cached = sum(1 for e in self.entries if e["cached"])
         return {
             "usd": round(self.usd, 6),
+            "list_usd": round(self.list_usd, 6),
             "tokens_in": self.tokens_in,
             "tokens_out": self.tokens_out,
             "steps": self.steps,

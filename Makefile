@@ -57,6 +57,20 @@ migrate:  ## apply schema.sql and print row counts (idempotent)
 ingest:  ## fetch filings, chunks, XBRL facts and prices (TICKERS=AAPL by default)
 	$(PY) scripts/ingest.py --tickers $(or $(TICKERS),AAPL)
 
+# ---------------------------------------------------------------- evaluation
+
+split:  ## regenerate the frozen eval split (changes the benchmark; needs --force)
+	$(PY) scripts/make_split.py
+
+eval:  ## run every policy over the frozen split, live
+	$(PY) -m eval.harness $(ARGS)
+
+replay:  ## re-run the same sweep from the journal; must cost $0.00
+	FV_REPLAY=true $(PY) -m eval.harness --out eval/results/mvp1_replay.json $(ARGS)
+
+determinism:  ## F1/F2: compare the live and replayed metric tables
+	$(PY) scripts/determinism.py
+
 reset:  ## DESTRUCTIVE: drop the postgres volume and re-migrate from empty
 	$(COMPOSE) down -v
 	$(MAKE) up

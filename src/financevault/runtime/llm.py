@@ -36,6 +36,40 @@ class Completion:
         return self.raw.get("stop_reason")
 
 
+# Request-surface capabilities, by model.
+#
+# The current generation takes `thinking: {type: "adaptive"}` and `output_config.effort`.
+# Haiku 4.5 predates both: `effort` is rejected outright, and thinking uses the older
+# `{type: "enabled", budget_tokens: N}` form. Sending the modern shape to Haiku is a 400,
+# which is easy to hit precisely because Haiku is the model you reach for to save money.
+MODERN_SURFACE = (
+    "claude-opus-5",
+    "claude-sonnet-5",
+    "claude-opus-4-8",
+    "claude-opus-4-7",
+    "claude-fable-5",
+    "claude-mythos-5",
+)
+
+
+def _is_modern(model: str) -> bool:
+    return any(model.startswith(prefix) for prefix in MODERN_SURFACE)
+
+
+def _thinking_param(model: str, want_thinking: bool, max_tokens: int) -> dict | None:
+    """The `thinking` value for this model, or None to omit the field entirely.
+
+    On legacy models, omitting the field is how thinking is turned off -- `{"type":
+    "disabled"}` is a modern-surface value and is not sent to them.
+    """
+    if _is_modern(model):
+        return {"type": "adaptive"} if want_thinking else {"type": "disabled"}
+    if not want_thinking:
+        return None
+    # Legacy form: budget_tokens must be under max_tokens, minimum 1024.
+    return {"type": "enabled", "budget_tokens": max(1024, max_tokens // 2)}
+
+
 def _client() -> Any:
     from anthropic import Anthropic  # noqa: PLC0415 - deferred so replay needs no SDK config
 
@@ -84,7 +118,10 @@ def call(
     call like the router's would spend its whole budget thinking and return nothing. Callers
     that want thinking ask for it and size `max_tokens` accordingly.
     """
-    thinking_cfg = {"type": "adaptive"} if thinking else {"type": "disabled"}
+    thinking_cfg = _thinking_param(model, thinking, max_tokens)
+    # Effort is a modern-surface parameter; on older models it is rejected, so it is dropped
+    # rather than passed through. Dropped here too so the key reflects what was actually sent.
+    effort_cfg = effort if (effort and _is_modern(model)) else None
 
     hash_ = journal.key(
         model,
@@ -92,7 +129,7 @@ def call(
         tools=tools,
         system=system,
         thinking=thinking_cfg,
-        effort=effort,
+        effort=effort_cfg,
         max_tokens=max_tokens,
     )
 
@@ -133,15 +170,16 @@ def call(
         "model": model,
         "messages": messages,
         "max_tokens": max_tokens,
-        "thinking": thinking_cfg,
     }
+    if thinking_cfg is not None:
+        request["thinking"] = thinking_cfg
     if system:
         request["system"] = system
     if tools:
         request["tools"] = tools
-    if effort:
+    if effort_cfg:
         # effort lives inside output_config, not at the top level.
-        request["output_config"] = {"effort": effort}
+        request["output_config"] = {"effort": effort_cfg}
 
     response = _client().messages.create(**request).model_dump(mode="json")
     latency_ms = int((time.monotonic() - started) * 1000)

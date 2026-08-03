@@ -10,6 +10,8 @@ __pycache__/
 # env / secrets
 .env
 .env.local
+.env.bak.*
+env.md
 
 # data + artifacts
 data/

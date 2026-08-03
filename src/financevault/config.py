@@ -15,12 +15,23 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:55433/0"
 
     # Models. Aliases, not dated snapshots -- the alias is the documented form.
+    #
+    # Defaults are the cheapest configuration that works: Haiku 4.5 at $1/$5 per MTok, on both
+    # the routing/judging path and the analyst path. Sonnet 5 is 3x the price ($3/$15) and is
+    # a one-line switch when it earns it:
+    #
+    #     FV_ANALYST_MODEL=claude-sonnet-5
+    #
+    # The switch is expected. MVP1 measures whether the pipeline works, so the cheap model is
+    # the right default; MVP2.2 stands up B0-B3 as separate policies, at which point the
+    # analyst model becomes an experimental variable rather than a setting. Note the efficiency
+    # benchmark needs at least one strong-model run to have a frontier to plot against.
     anthropic_api_key: str = ""
     judge_model: str = "claude-haiku-4-5"
-    analyst_model: str = "claude-sonnet-5"
-    # Effort controls thinking depth and overall spend; it defaults to `high` server-side,
-    # which is more than a bounded tool loop needs. Kept configurable so the efficiency
-    # benchmark can sweep it rather than guess.
+    analyst_model: str = "claude-haiku-4-5"
+    # Thinking depth and overall spend on the analyst path. Ignored on models that predate the
+    # parameter -- Haiku 4.5 rejects it outright, so `llm.call` drops it rather than passing
+    # it through. Kept configurable so the efficiency benchmark can sweep it.
     analyst_effort: str = "medium"
     embed_model: str = "BAAI/bge-small-en-v1.5"
     embed_dim: int = 384

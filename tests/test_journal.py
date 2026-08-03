@@ -150,12 +150,23 @@ def test_replay_miss_raises_instead_of_calling_live(
     settings.cache_clear()
 
 
-def test_replay_hit_costs_nothing(db: bool, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("model", ["claude-haiku-4-5", "claude-sonnet-5"])
+def test_replay_hit_costs_nothing(db: bool, monkeypatch: pytest.MonkeyPatch, model: str) -> None:
+    """Runs on both request surfaces, since they produce different keys for the same call.
+
+    The expected key is derived through the same helper `call` uses rather than hardcoded --
+    a literal here would silently drift from the code and turn a real key regression into a
+    passing test.
+    """
     from financevault.runtime import llm
 
-    messages = [{"role": "user", "content": "cached question"}]
-    model = "claude-haiku-4-5-20251001"
-    hash_ = journal.key(model, messages, thinking={"type": "disabled"}, max_tokens=4096)
+    messages = [{"role": "user", "content": f"cached question ({model})"}]
+    hash_ = journal.key(
+        model,
+        messages,
+        thinking=llm._thinking_param(model, False, 4096),
+        max_tokens=4096,
+    )
     journal.put(
         hash_,
         model,

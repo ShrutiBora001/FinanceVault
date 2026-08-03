@@ -140,6 +140,32 @@ def test_multiple_claims_are_all_extracted() -> None:
     assert len(numeric.extract_claims("Revenue $416.16 billion, up from $391.04 billion")) == 2
 
 
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # Paren outside the dollar: a restatement, still positive.
+        ("($112.01 billion)", 112_010_000_000.0),
+        ("Revenue ($416.16 billion) grew", 416_160_000_000.0),
+        # Dollar outside the paren, or no dollar at all: an accounting negative.
+        ("$(2,500) thousand", -2_500_000.0),
+        ("a loss of (2,500)", -2_500.0),
+    ],
+)
+def test_parenthetical_restatements_are_not_accounting_negatives(
+    text: str, expected: float
+) -> None:
+    """Regression: `($112.01 billion)` parsed as *negative* $112B on a correct answer."""
+    claims = [c for c in numeric.extract_claims(text) if c.is_financial]
+    assert claims and claims[0].value == pytest.approx(expected), text
+
+
+def test_a_restated_figure_scores_full_marks(evidence: Evidence) -> None:
+    """The exact phrasing that scored 0.67: the same figure written twice, two ways."""
+    answer = f"Apple's net income was ${NET_INCOME:,.0f} (${NET_INCOME / 1e9:.2f} billion)."
+    s = numeric.score(answer, evidence=evidence)
+    assert s.score == 1.0, s.reason
+
+
 # ---------------------------------------------------------------- evidence collection
 
 

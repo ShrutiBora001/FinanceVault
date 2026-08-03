@@ -61,9 +61,17 @@ SCALE_WORDS = {
 }
 SCALE_ALT = "|".join(sorted(SCALE_WORDS, key=len, reverse=True))
 
+# The `(?!\s*\$)` on the opening paren separates two things that look identical:
+#
+#   $(2,500)              accounting negative -- dollar outside the paren
+#   (2,500)               accounting negative -- bare
+#   ($112.01 billion)     parenthetical restatement -- paren outside the dollar
+#
+# Without it, every restated figure is read as negative. Financial answers restate constantly
+# ("$112,010,000,000 ($112.01 billion)"), so the aside is the common case, not the edge one.
 NUMBER_RE = re.compile(
     r"(?<![\w.])"
-    r"(?P<sign>-|\()?\s*\$?\s*"
+    r"(?P<sign>-|\((?!\s*\$))?\s*\$?\s*"
     r"(?P<num>\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)"
     r"\s*\)?"  # accounting negatives close the paren before any scale word
     r"\s*(?P<scale>" + SCALE_ALT + r")?\b"

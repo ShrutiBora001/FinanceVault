@@ -7,6 +7,7 @@ returning. The horizon comes from the run context, never from tool arguments.
 from __future__ import annotations
 
 from datetime import date
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -22,6 +23,19 @@ class RetrieveInput(BaseModel):
     form: str | None = Field(
         default=None, description="Restrict to a filing form, e.g. '10-K' or '10-Q'."
     )
+    section: str | None = Field(
+        default=None,
+        description=(
+            "Restrict to a filing section. Useful values: 'risk factors', "
+            "'management's discussion and analysis', 'financial statements', 'business', "
+            "'legal proceedings'. Omit unless the question clearly implies one."
+        ),
+    )
+
+
+# How many candidates the cheap retriever hands to the reranker. Wider than `k` because the
+# reranker's job is to reorder, and it can only promote a passage that reached the shortlist.
+RERANK_CANDIDATES = 30
 
 
 # Hybrid retrieval: vector similarity and full-text rank, fused by reciprocal rank.
@@ -31,7 +45,7 @@ RETRIEVE_SQL = """
 WITH vec AS (
     SELECT c.id, row_number() OVER (ORDER BY c.embedding <=> %(embedding)s) AS rank
     FROM chunks c JOIN filings f ON f.id = c.filing_id
-    WHERE {asof} {form_filter}
+    WHERE {asof} {form_filter} {section_filter}
     ORDER BY c.embedding <=> %(embedding)s
     LIMIT 50
 ),
@@ -41,7 +55,7 @@ fts AS (
                ORDER BY ts_rank(c.tsv, plainto_tsquery('english', %(query)s)) DESC
            ) AS rank
     FROM chunks c JOIN filings f ON f.id = c.filing_id
-    WHERE c.tsv @@ plainto_tsquery('english', %(query)s) AND {asof} {form_filter}
+    WHERE c.tsv @@ plainto_tsquery('english', %(query)s) AND {asof} {form_filter} {section_filter}
     LIMIT 50
 ),
 fused AS (
@@ -57,42 +71,70 @@ FROM fused
 JOIN chunks c ON c.id = fused.id
 JOIN filings f ON f.id = c.filing_id
 ORDER BY fused.score DESC
-LIMIT %(k)s
+LIMIT %(candidates)s
 """
 
 
 def retrieve_handler(args: RetrieveInput, ctx: ToolContext) -> ToolResult:
-    from financevault.env.chunk import embed_query  # noqa: PLC0415 - defers the torch import
+    from financevault.env import rerank  # noqa: PLC0415 - defers the torch import
+    from financevault.env.chunk import embed_query  # noqa: PLC0415
 
-    form_filter = "AND f.form = %(form)s" if args.form else ""
-    sql = RETRIEVE_SQL.format(asof=ctx.as_of.sql("filings", alias="f"), form_filter=form_filter)
+    sql = RETRIEVE_SQL.format(
+        asof=ctx.as_of.sql("filings", alias="f"),
+        form_filter="AND f.form = %(form)s" if args.form else "",
+        section_filter="AND c.section = %(section)s" if args.section else "",
+    )
 
-    params = {
+    params: dict[str, Any] = {
         "embedding": str(embed_query(args.query).tolist()),
         "query": args.query,
-        "k": args.k,
+        "candidates": RERANK_CANDIDATES,
         **ctx.as_of.params(),
     }
     if args.form:
         params["form"] = args.form
+    if args.section:
+        params["section"] = args.section
 
     rows = ctx.as_of.check(pg.fetch_all(sql, params))
-    return ToolResult(
-        ok=True,
-        data=[
-            {
-                "chunk_id": r["id"],
-                "text": r["text"],
-                "section": r["section"],
-                "form": r["form"],
-                "period_end": str(r["period_end"]) if r["period_end"] else None,
-                "accession": r["accession"],
-                "accepted_at": r["accepted_at"].isoformat(),
-                "score": round(float(r["score"]), 6),
-            }
-            for r in rows
-        ],
+    if not rows and args.section:
+        return ToolResult(
+            ok=False,
+            error=(
+                f"no passages in section {args.section!r}. Available sections: "
+                f"{', '.join(available_sections(ctx))}"
+            ),
+        )
+
+    candidates = [
+        {
+            "chunk_id": r["id"],
+            "text": r["text"],
+            "section": r["section"],
+            "form": r["form"],
+            "period_end": str(r["period_end"]) if r["period_end"] else None,
+            "accession": r["accession"],
+            "accepted_at": r["accepted_at"].isoformat(),
+            "retrieval_score": round(float(r["score"]), 6),
+        }
+        for r in rows
+    ]
+    # Two stages: cheap hybrid retrieval narrows the corpus, the cross-encoder orders what
+    # survives. The reranker can only promote what reached the shortlist, so the shortlist is
+    # deliberately wider than k.
+    return ToolResult(ok=True, data=rerank.rerank(args.query, candidates, top_k=args.k))
+
+
+def available_sections(ctx: ToolContext, limit: int = 8) -> list[str]:
+    """Sections that actually exist for this company, so a bad filter is recoverable."""
+    rows = pg.fetch_all(
+        """
+        SELECT DISTINCT c.section FROM chunks c JOIN filings f ON f.id = c.filing_id
+        WHERE f.cik = %(cik)s AND c.section IS NOT NULL LIMIT %(limit)s
+        """,
+        {"cik": ctx.cik, "limit": limit},
     )
+    return [r["section"] for r in rows]
 
 
 REGISTRY.register(

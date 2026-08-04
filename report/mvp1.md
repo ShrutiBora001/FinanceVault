@@ -109,12 +109,13 @@ two conditions disagree about, and it bounds how large an effect H1 could possib
 divergence near zero would have meant the experiment was unrunnable; 34% means there is
 something to measure.
 
-**The `full` and `tight` rows are a finding, not noise.** Giving the agent every tool makes it
-*worse*: 0% of those trajectories pass step filtering and only 30% reach a correct answer,
-against 90% when restricted to XBRL lookup. The failure mode is consistent — it ends in prose
-without calling `finish`. Constraining the toolset is doing more work here than the agent's
-own routing, which is an argument for the router that MVP2.2 should test properly rather than
-assume.
+**The `full` and `tight` rows were a bug, not a finding — corrected in MVP2.1.** They scored
+0% accept and 30% correct, and this report originally argued that constraining the toolset was
+doing more work than the agent's own routing. That was wrong. The agent was producing correct
+answers with correct citations and writing the `finish` call as pseudo-XML in the text channel,
+where nothing executes it. A sharper system prompt moved `full` and `tight` to 50% accept and
+80% correct. The original claim about routing rested entirely on the bug and should be
+disregarded.
 
 Two caveats on these numbers:
 

@@ -38,11 +38,24 @@ Rules:
   working with data as of a specific date and your own recollection may be stale or wrong.
 - Prefer lookup_fact for reported figures. Use retrieve_filings for narrative or commentary.
 - Use python for arithmetic. Do not compute in your head.
-- Call finish when you have the answer, and cite every figure you state.
 - If a tool returns an error, read it and try a different approach. Errors often name the
   correct tag or table.
 
+To give your answer, invoke the `finish` tool. Do not write a tool call as text: never emit
+`<finish>`, XML tags, or a JSON blob describing a call. Those are not tool calls and nothing
+executes them, so the answer is lost. Use the tool-use mechanism itself.
+
 You have a limited step and cost budget. Do not explore; go to the answer."""
+
+# The model sometimes writes a tool call as prose rather than invoking it -- most often
+# `finish`, and most often with a complete, correct answer inside. That is worth one
+# corrective nudge: the work is already done, and discarding it turns a right answer into no
+# answer. Recorded as `ok_after_nudge` rather than `ok`, so recovered runs stay countable and
+# a rise in the rate is visible instead of absorbed.
+NUDGE = (
+    "You wrote a tool call as text. Text is not a tool call and nothing executed it. "
+    "Invoke the tool through the tool-use mechanism now."
+)
 
 
 @dataclass(slots=True)
@@ -160,6 +173,7 @@ def execute(
         ledger=ledger,
     )
 
+    nudged = False
     while True:
         try:
             ledger.step()
@@ -189,8 +203,6 @@ def execute(
         latency_ms = int((time.monotonic() - started) * 1000)
 
         if not completion.tool_calls:
-            # No tool call and no finish: the model answered in prose. Recorded as its own
-            # outcome rather than salvaged, so the rate is visible in the metrics.
             run.steps.append(
                 Step(
                     idx=len(run.steps),
@@ -204,6 +216,15 @@ def execute(
                     latency_ms=latency_ms,
                 )
             )
+
+            if not nudged:
+                # One corrective attempt. The prose usually contains a complete answer, so
+                # the cost of the nudge is far below the cost of discarding the work.
+                nudged = True
+                messages.append({"role": "assistant", "content": completion.text or "(empty)"})
+                messages.append({"role": "user", "content": NUDGE})
+                continue
+
             run.outcome = "no_tool_call"
             run.answer = completion.text or None
             break

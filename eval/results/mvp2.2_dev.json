@@ -1,0 +1,121 @@
+{
+  "replay": false,
+  "analyst_model": "claude-haiku-4-5",
+  "judge_model": "claude-haiku-4-5",
+  "n_questions": 30,
+  "subset": "dev",
+  "journal_spend_usd": 0.40512,
+  "policies": [
+    {
+      "policy": "b0-no-tools",
+      "n": 30,
+      "d1_accuracy": 0.1,
+      "d1_ci95": [
+        0.0346,
+        0.2562
+      ],
+      "d2_unsupported_claim_rate": 0.1667,
+      "d3_step_pass_rate": 0.0,
+      "e1_cost_per_correct": 0.008499,
+      "e2_p50_latency_ms": null,
+      "e2_p95_latency_ms": null,
+      "e2_n": 0,
+      "total_list_usd": 0.025497,
+      "total_spent_usd": 0.0,
+      "mean_steps": 1.0,
+      "outcomes": {
+        "ok": 30
+      },
+      "accuracy_by_archetype": {
+        "cross_company": 0.5,
+        "delta": 0.0,
+        "lookup": 0.125,
+        "ratio": 0.0
+      }
+    },
+    {
+      "policy": "b1-rag",
+      "n": 30,
+      "d1_accuracy": 0.0667,
+      "d1_ci95": [
+        0.0185,
+        0.2132
+      ],
+      "d2_unsupported_claim_rate": 0.0,
+      "d3_step_pass_rate": 0.0667,
+      "e1_cost_per_correct": 0.047771,
+      "e2_p50_latency_ms": null,
+      "e2_p95_latency_ms": null,
+      "e2_n": 0,
+      "total_list_usd": 0.095542,
+      "total_spent_usd": 0.0,
+      "mean_steps": 2.0,
+      "outcomes": {
+        "ok": 30
+      },
+      "accuracy_by_archetype": {
+        "cross_company": 0.0,
+        "delta": 0.0,
+        "lookup": 0.125,
+        "ratio": 0.0
+      }
+    },
+    {
+      "policy": "b2-tools",
+      "n": 30,
+      "d1_accuracy": 0.7333,
+      "d1_ci95": [
+        0.5555,
+        0.8582
+      ],
+      "d2_unsupported_claim_rate": 0.0111,
+      "d3_step_pass_rate": 0.4962,
+      "e1_cost_per_correct": 0.02445,
+      "e2_p50_latency_ms": null,
+      "e2_p95_latency_ms": null,
+      "e2_n": 0,
+      "total_list_usd": 0.537893,
+      "total_spent_usd": 0.156328,
+      "mean_steps": 4.43,
+      "outcomes": {
+        "no_tool_call": 2,
+        "ok": 23,
+        "max_steps": 5
+      },
+      "accuracy_by_archetype": {
+        "cross_company": 1.0,
+        "delta": 0.2857,
+        "lookup": 0.9375,
+        "ratio": 0.6
+      }
+    },
+    {
+      "policy": "b3-frontier",
+      "n": 30,
+      "d1_accuracy": 0.8667,
+      "d1_ci95": [
+        0.7032,
+        0.9469
+      ],
+      "d2_unsupported_claim_rate": 0.0167,
+      "d3_step_pass_rate": 0.5259,
+      "e1_cost_per_correct": 0.048163,
+      "e2_p50_latency_ms": null,
+      "e2_p95_latency_ms": null,
+      "e2_n": 0,
+      "total_list_usd": 1.252239,
+      "total_spent_usd": 0.222027,
+      "mean_steps": 3.87,
+      "outcomes": {
+        "ok": 28,
+        "max_steps": 2
+      },
+      "accuracy_by_archetype": {
+        "cross_company": 1.0,
+        "delta": 0.5714,
+        "lookup": 1.0,
+        "ratio": 0.8
+      }
+    }
+  ]
+}

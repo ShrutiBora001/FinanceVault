@@ -39,9 +39,22 @@ class Settings(BaseSettings):
     embed_model: str = "BAAI/bge-small-en-v1.5"
     embed_dim: int = 384
 
-    # execution budget; the ledger aborts a run that breaches either
-    max_steps: int = 6
-    max_usd: float = 0.05
+    # Execution budget; the ledger aborts a run that breaches either.
+    #
+    # Both were sized for Haiku on MVP1's four-filing corpus and were measurably too tight at
+    # MVP2.2's scale: B2 hit the step ceiling on 27% of dev runs and B3 hit the dollar ceiling
+    # on 20%. An aborted run is scored as a failure, so both baselines were being marked down
+    # for a limit rather than for capability -- and because it bound hardest on the expensive
+    # model, it flattered the cost-per-correct comparison in exactly the direction that made
+    # the cheap model look good.
+    #
+    # `max_steps` is the *caller's* ceiling and the executor clips the router's per-path budget
+    # to it, so 6 silently overrode P4's intended 8. It is now high enough that the per-path
+    # ceiling is what actually binds, which is where the decision belongs. `max_usd` is set
+    # well clear of the observed distribution (B3's aborted runs died at ~$0.058) so that cost
+    # stops being a hidden confound; it remains a real ceiling against a runaway loop.
+    max_steps: int = 12
+    max_usd: float = 0.25
 
     # When true, every model call must resolve from the journal. A miss is an error
     # rather than a live call, so a replay can never silently cost money.

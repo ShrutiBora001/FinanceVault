@@ -55,8 +55,20 @@ class Route:
 
     @property
     def max_steps(self) -> int:
-        """A step ceiling proportional to the path. P0 needs one call; P4 may need several."""
-        return {"P0": 2, "P1": 4, "P2": 4, "P3": 6, "P4": 8}[self.path]
+        """A step ceiling proportional to the path. P0 needs one call; P4 may need several.
+
+        This is the ceiling that actually binds. The executor clips the caller's `max_steps`
+        to it, so raising the global setting does nothing for a path whose own budget is
+        lower -- on the MVP2.2 dev split, lifting the global from 6 to 12 converted B3's cost
+        aborts into step aborts at 6.3 steps and moved accuracy by 3 points, because every
+        aborted run was on P3 and `min(12, 6)` is still 6.
+
+        P3 was sized for a single SQL aggregate and is in practice the path the router sends
+        every multi-step archetype to: delta, ratio and cross_company questions all land here,
+        and half of those runs were hitting the ceiling. A question that needs two lookups and
+        arithmetic cannot finish in six steps with any reliability.
+        """
+        return {"P0": 2, "P1": 4, "P2": 4, "P3": 10, "P4": 12}[self.path]
 
 
 def route(question: str, *, ledger: Ledger, model: str | None = None) -> Route:

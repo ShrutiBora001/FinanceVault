@@ -1,57 +1,57 @@
 {
   "n_trajectories": 50,
-  "c1_accept_rate": 0.26,
-  "outcome_accept_rate": 0.6,
-  "both": 0.26,
-  "correct_but_flawed": 0.34,
-  "step_pass_rate": 0.6232,
+  "c1_accept_rate": 0.4,
+  "outcome_accept_rate": 0.88,
+  "both": 0.4,
+  "correct_but_flawed": 0.48,
+  "step_pass_rate": 0.6711,
   "by_variant": {
     "compute": {
       "n": 10,
-      "accept": 0.4,
-      "correct": 0.7
+      "accept": 0.3,
+      "correct": 0.9
     },
     "facts_only": {
       "n": 10,
-      "accept": 0.6,
-      "correct": 0.9
+      "accept": 0.5,
+      "correct": 1.0
     },
     "full": {
       "n": 10,
-      "accept": 0.0,
-      "correct": 0.3
+      "accept": 0.5,
+      "correct": 0.8
     },
     "text_only": {
       "n": 10,
-      "accept": 0.3,
-      "correct": 0.8
+      "accept": 0.2,
+      "correct": 0.9
     },
     "tight": {
       "n": 10,
-      "accept": 0.0,
-      "correct": 0.3
+      "accept": 0.5,
+      "correct": 0.8
     }
   },
   "exported": {
-    "accepted": 13,
-    "repaired": 10,
-    "hard_negative": 20,
-    "step_filtered": 23
+    "accepted": 20,
+    "repaired": 16,
+    "hard_negative": 36,
+    "step_filtered": 36
   },
   "trajectories": [
     {
-      "run_id": "fc148258-4c41-4eec-8c5a-68ed83ab9c82",
+      "run_id": "81e5170d-a934-4de9-99b2-022da918350f",
       "question_id": "aapl-netincomeloss-2025",
       "variant": "full",
-      "outcome": "no_tool_call",
-      "n_steps": 2,
+      "outcome": "ok",
+      "n_steps": 3,
       "all_steps_pass": false,
-      "answer_correct": false,
+      "answer_correct": true,
       "first_failing_step": 0,
-      "list_usd": 0.006441
+      "list_usd": 0.013319
     },
     {
-      "run_id": "922fab0e-0dc3-4362-9df6-4e8ffcceb245",
+      "run_id": "744fb553-81ac-4e09-a23e-c3f358d38382",
       "question_id": "aapl-netincomeloss-2025",
       "variant": "facts_only",
       "outcome": "ok",
@@ -59,10 +59,10 @@
       "all_steps_pass": true,
       "answer_correct": true,
       "first_failing_step": null,
-      "list_usd": 0.007861
+      "list_usd": 0.008381
     },
     {
-      "run_id": "f8def2e2-dede-42c4-9b78-b69eae913b66",
+      "run_id": "786e0746-cd67-4c6f-9252-17c3715f5bb1",
       "question_id": "aapl-netincomeloss-2025",
       "variant": "text_only",
       "outcome": "ok",
@@ -70,43 +70,43 @@
       "all_steps_pass": false,
       "answer_correct": true,
       "first_failing_step": 0,
-      "list_usd": 0.007567
+      "list_usd": 0.008115
     },
     {
-      "run_id": "560fc435-bda6-447b-8e42-da131fc71617",
+      "run_id": "21003e5b-69d7-4a05-a8dc-cf28999a6f1f",
       "question_id": "aapl-netincomeloss-2025",
       "variant": "compute",
       "outcome": "ok",
-      "n_steps": 4,
+      "n_steps": 3,
       "all_steps_pass": false,
       "answer_correct": true,
       "first_failing_step": 0,
-      "list_usd": 0.012281
+      "list_usd": 0.00982
     },
     {
-      "run_id": "a5b40e8e-c793-4e36-9adc-68b007ff20d9",
+      "run_id": "c3a09286-9f82-467f-aec0-abb52c713898",
       "question_id": "aapl-netincomeloss-2025",
       "variant": "tight",
-      "outcome": "no_tool_call",
-      "n_steps": 2,
+      "outcome": "ok",
+      "n_steps": 3,
       "all_steps_pass": false,
-      "answer_correct": false,
+      "answer_correct": true,
       "first_failing_step": 0,
-      "list_usd": 0.006441
+      "list_usd": 0.013319
     },
     {
-      "run_id": "ec9cc032-77c7-470e-b0c5-5269807c1733",
+      "run_id": "81f1d3ab-af27-4632-88d4-1309571f3dcf",
       "question_id": "aapl-netincomeloss-2024",
       "variant": "full",
-      "outcome": "no_tool_call",
-      "n_steps": 2,
+      "outcome": "ok",
+      "n_steps": 3,
       "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 1,
-      "list_usd": 0.007905
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.012574
     },
     {
-      "run_id": "09e3787f-8916-42c7-98e7-148ad08c5549",
+      "run_id": "c3260d59-7267-4e2b-be1d-2eeb3c6022fe",
       "question_id": "aapl-netincomeloss-2024",
       "variant": "facts_only",
       "outcome": "ok",
@@ -114,450 +114,450 @@
       "all_steps_pass": true,
       "answer_correct": true,
       "first_failing_step": null,
-      "list_usd": 0.006631
+      "list_usd": 0.008282
     },
     {
-      "run_id": "beab7ddf-fd48-4598-a821-de4074e0e720",
+      "run_id": "d222f3c4-6845-4cbd-8d1f-3f2a5f7524e1",
       "question_id": "aapl-netincomeloss-2024",
       "variant": "text_only",
       "outcome": "ok",
       "n_steps": 2,
-      "all_steps_pass": true,
+      "all_steps_pass": false,
       "answer_correct": true,
-      "first_failing_step": null,
-      "list_usd": 0.008406
+      "first_failing_step": 0,
+      "list_usd": 0.008229
     },
     {
-      "run_id": "6de2d68b-c6a6-4069-9c20-6ca4595b1967",
+      "run_id": "7d4db36c-4eb7-4828-b116-9eb83437b953",
       "question_id": "aapl-netincomeloss-2024",
-      "variant": "compute",
-      "outcome": "no_tool_call",
-      "n_steps": 3,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 2,
-      "list_usd": 0.011092
-    },
-    {
-      "run_id": "5d1af394-ad96-47f2-a25a-794f9758e425",
-      "question_id": "aapl-netincomeloss-2024",
-      "variant": "tight",
-      "outcome": "no_tool_call",
-      "n_steps": 2,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 1,
-      "list_usd": 0.007905
-    },
-    {
-      "run_id": "d7ec2dca-3b17-4c68-9a2f-921fe147e68d",
-      "question_id": "aapl-netincomeloss-delta-2025",
-      "variant": "full",
-      "outcome": "ok",
-      "n_steps": 4,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 0,
-      "list_usd": 0.011838
-    },
-    {
-      "run_id": "6546cc85-f9cc-4e6b-98de-c2831ba38a18",
-      "question_id": "aapl-netincomeloss-delta-2025",
-      "variant": "facts_only",
-      "outcome": "ok",
-      "n_steps": 4,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 0,
-      "list_usd": 0.012274
-    },
-    {
-      "run_id": "e1912d8a-22d6-4937-8f7d-41d993bde951",
-      "question_id": "aapl-netincomeloss-delta-2025",
-      "variant": "text_only",
-      "outcome": "ok",
-      "n_steps": 2,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 0,
-      "list_usd": 0.008085
-    },
-    {
-      "run_id": "72f149bc-b2f0-4b58-b3e3-fb3026bcaf76",
-      "question_id": "aapl-netincomeloss-delta-2025",
-      "variant": "compute",
-      "outcome": "ok",
-      "n_steps": 3,
-      "all_steps_pass": true,
-      "answer_correct": true,
-      "first_failing_step": null,
-      "list_usd": 0.011123
-    },
-    {
-      "run_id": "c4ed31ef-9357-43d5-a495-98d6ab417e02",
-      "question_id": "aapl-netincomeloss-delta-2025",
-      "variant": "tight",
-      "outcome": "ok",
-      "n_steps": 4,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 0,
-      "list_usd": 0.011838
-    },
-    {
-      "run_id": "56259b10-a881-4a3b-8c31-93bb0d677be1",
-      "question_id": "aapl-netincomeloss-2023",
-      "variant": "full",
-      "outcome": "no_tool_call",
-      "n_steps": 2,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 1,
-      "list_usd": 0.007466
-    },
-    {
-      "run_id": "2153bf0c-f34d-41e9-8264-96699ce9dda8",
-      "question_id": "aapl-netincomeloss-2023",
-      "variant": "facts_only",
-      "outcome": "ok",
-      "n_steps": 2,
-      "all_steps_pass": true,
-      "answer_correct": true,
-      "first_failing_step": null,
-      "list_usd": 0.005498
-    },
-    {
-      "run_id": "ac211f6d-b5b0-4193-9bce-5e2187d3b830",
-      "question_id": "aapl-netincomeloss-2023",
-      "variant": "text_only",
-      "outcome": "ok",
-      "n_steps": 2,
-      "all_steps_pass": true,
-      "answer_correct": true,
-      "first_failing_step": null,
-      "list_usd": 0.007034
-    },
-    {
-      "run_id": "d1f717b7-fa2e-48ad-9ee7-aedeebaa28ef",
-      "question_id": "aapl-netincomeloss-2023",
-      "variant": "compute",
-      "outcome": "no_tool_call",
-      "n_steps": 4,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 0,
-      "list_usd": 0.012814
-    },
-    {
-      "run_id": "c8284e3a-015a-4e1f-beef-492adc6766ec",
-      "question_id": "aapl-netincomeloss-2023",
-      "variant": "tight",
-      "outcome": "no_tool_call",
-      "n_steps": 2,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 1,
-      "list_usd": 0.007466
-    },
-    {
-      "run_id": "63211c34-42f5-4e1e-a522-5078b54c5092",
-      "question_id": "aapl-grossprofit-2025",
-      "variant": "full",
-      "outcome": "ok",
-      "n_steps": 3,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 0,
-      "list_usd": 0.011965
-    },
-    {
-      "run_id": "7cdfdc7d-3fe8-4f0a-aa7a-8159640533f2",
-      "question_id": "aapl-grossprofit-2025",
-      "variant": "facts_only",
-      "outcome": "ok",
-      "n_steps": 2,
-      "all_steps_pass": true,
-      "answer_correct": true,
-      "first_failing_step": null,
-      "list_usd": 0.007839
-    },
-    {
-      "run_id": "32a70325-14b7-4adf-bd23-03bad41e696a",
-      "question_id": "aapl-grossprofit-2025",
-      "variant": "text_only",
-      "outcome": "ok",
-      "n_steps": 3,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 0,
-      "list_usd": 0.014217
-    },
-    {
-      "run_id": "1ce9b826-f773-4231-9147-6a33e472729f",
-      "question_id": "aapl-grossprofit-2025",
-      "variant": "compute",
-      "outcome": "ok",
-      "n_steps": 3,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 0,
-      "list_usd": 0.009569
-    },
-    {
-      "run_id": "24b56237-dad0-4ca1-9225-ba76dfc84ec2",
-      "question_id": "aapl-grossprofit-2025",
-      "variant": "tight",
-      "outcome": "ok",
-      "n_steps": 3,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 0,
-      "list_usd": 0.011965
-    },
-    {
-      "run_id": "9a4816c9-32f3-4431-b7dc-18f7bb11577f",
-      "question_id": "aapl-grossprofit-delta-2025",
-      "variant": "full",
-      "outcome": "ok",
-      "n_steps": 4,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 1,
-      "list_usd": 0.016149
-    },
-    {
-      "run_id": "11fa876c-dec3-47f1-ac70-cc90facddf44",
-      "question_id": "aapl-grossprofit-delta-2025",
-      "variant": "facts_only",
-      "outcome": "ok",
-      "n_steps": 4,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 0,
-      "list_usd": 0.012743
-    },
-    {
-      "run_id": "26e00cf1-00b0-4bd1-b718-597399dce505",
-      "question_id": "aapl-grossprofit-delta-2025",
-      "variant": "text_only",
-      "outcome": "ok",
-      "n_steps": 2,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 0,
-      "list_usd": 0.007911
-    },
-    {
-      "run_id": "20a56ca7-e058-422c-8572-9db32348c066",
-      "question_id": "aapl-grossprofit-delta-2025",
-      "variant": "compute",
-      "outcome": "ok",
-      "n_steps": 4,
-      "all_steps_pass": true,
-      "answer_correct": true,
-      "first_failing_step": null,
-      "list_usd": 0.017779
-    },
-    {
-      "run_id": "4e0586a0-bd01-44cb-a874-c2b495074d12",
-      "question_id": "aapl-grossprofit-delta-2025",
-      "variant": "tight",
-      "outcome": "ok",
-      "n_steps": 4,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 1,
-      "list_usd": 0.016149
-    },
-    {
-      "run_id": "c8258381-b450-4288-bc5b-6fb69ddaa01b",
-      "question_id": "aapl-grossprofit-2024",
-      "variant": "full",
-      "outcome": "no_tool_call",
-      "n_steps": 2,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 1,
-      "list_usd": 0.008512
-    },
-    {
-      "run_id": "97288de7-03c2-4655-a862-7998105cba9a",
-      "question_id": "aapl-grossprofit-2024",
-      "variant": "facts_only",
-      "outcome": "ok",
-      "n_steps": 2,
-      "all_steps_pass": true,
-      "answer_correct": true,
-      "first_failing_step": null,
-      "list_usd": 0.008664
-    },
-    {
-      "run_id": "1ee92de4-96ce-4bab-b7a1-9266132783af",
-      "question_id": "aapl-grossprofit-2024",
-      "variant": "text_only",
-      "outcome": "ok",
-      "n_steps": 4,
-      "all_steps_pass": true,
-      "answer_correct": true,
-      "first_failing_step": null,
-      "list_usd": 0.022768
-    },
-    {
-      "run_id": "266bf206-2be3-45a7-9b53-33317dfa03d0",
-      "question_id": "aapl-grossprofit-2024",
-      "variant": "compute",
-      "outcome": "no_tool_call",
-      "n_steps": 3,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 2,
-      "list_usd": 0.010004
-    },
-    {
-      "run_id": "4f2a0d87-1cc6-45b5-9081-8fb992b6cead",
-      "question_id": "aapl-grossprofit-2024",
-      "variant": "tight",
-      "outcome": "no_tool_call",
-      "n_steps": 2,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 1,
-      "list_usd": 0.008512
-    },
-    {
-      "run_id": "44d0f03a-e3ea-4f35-8235-25b940e95840",
-      "question_id": "aapl-grossprofit-2023",
-      "variant": "full",
-      "outcome": "no_tool_call",
-      "n_steps": 2,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 1,
-      "list_usd": 0.006547
-    },
-    {
-      "run_id": "d6d7877e-9fc9-4e3b-9ece-330e3f67ccf2",
-      "question_id": "aapl-grossprofit-2023",
-      "variant": "facts_only",
-      "outcome": "ok",
-      "n_steps": 2,
-      "all_steps_pass": true,
-      "answer_correct": true,
-      "first_failing_step": null,
-      "list_usd": 0.005708
-    },
-    {
-      "run_id": "c6cb9483-7cb4-4a6d-81b4-f4cc5dc9e09f",
-      "question_id": "aapl-grossprofit-2023",
-      "variant": "text_only",
-      "outcome": "ok",
-      "n_steps": 3,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 0,
-      "list_usd": 0.013848
-    },
-    {
-      "run_id": "b0ee8afa-612a-4e49-82a3-c854a8206341",
-      "question_id": "aapl-grossprofit-2023",
-      "variant": "compute",
-      "outcome": "ok",
-      "n_steps": 2,
-      "all_steps_pass": true,
-      "answer_correct": true,
-      "first_failing_step": null,
-      "list_usd": 0.006901
-    },
-    {
-      "run_id": "1de69f7c-0d59-4263-b779-52dfc395d5ab",
-      "question_id": "aapl-grossprofit-2023",
-      "variant": "tight",
-      "outcome": "no_tool_call",
-      "n_steps": 2,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 1,
-      "list_usd": 0.006547
-    },
-    {
-      "run_id": "a41f9865-c7eb-4226-af7f-527eea035766",
-      "question_id": "aapl-operatingincomeloss-delta-2025",
-      "variant": "full",
-      "outcome": "no_tool_call",
-      "n_steps": 4,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 3,
-      "list_usd": 0.016201
-    },
-    {
-      "run_id": "6be33ec0-d91a-4a08-8fca-a92a0cc02377",
-      "question_id": "aapl-operatingincomeloss-delta-2025",
-      "variant": "facts_only",
-      "outcome": "ok",
-      "n_steps": 3,
-      "all_steps_pass": false,
-      "answer_correct": true,
-      "first_failing_step": 2,
-      "list_usd": 0.007066
-    },
-    {
-      "run_id": "26f82941-4d81-4f13-8416-6b9af2a64760",
-      "question_id": "aapl-operatingincomeloss-delta-2025",
-      "variant": "text_only",
-      "outcome": "ok",
-      "n_steps": 3,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 0,
-      "list_usd": 0.014325
-    },
-    {
-      "run_id": "06a20b32-c614-473f-a920-b49cc2efbf07",
-      "question_id": "aapl-operatingincomeloss-delta-2025",
       "variant": "compute",
       "outcome": "ok",
       "n_steps": 5,
       "all_steps_pass": false,
       "answer_correct": true,
-      "first_failing_step": 0,
-      "list_usd": 0.0185
+      "first_failing_step": 1,
+      "list_usd": 0.018296
     },
     {
-      "run_id": "a99fce04-be4c-408d-a22f-f12d62efa8ed",
+      "run_id": "d5bac650-f6ed-4848-8d49-d2db6d918f3e",
+      "question_id": "aapl-netincomeloss-2024",
+      "variant": "tight",
+      "outcome": "ok",
+      "n_steps": 3,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.012574
+    },
+    {
+      "run_id": "e14bc771-fe5c-42e1-ac87-4c81f6429041",
+      "question_id": "aapl-netincomeloss-delta-2025",
+      "variant": "full",
+      "outcome": "ok",
+      "n_steps": 4,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.011845
+    },
+    {
+      "run_id": "9a17f444-6758-4dbb-8b12-a5088eec5c87",
+      "question_id": "aapl-netincomeloss-delta-2025",
+      "variant": "facts_only",
+      "outcome": "ok",
+      "n_steps": 4,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.012138
+    },
+    {
+      "run_id": "c55fcb77-33ad-4b28-918a-8d59abb25e6b",
+      "question_id": "aapl-netincomeloss-delta-2025",
+      "variant": "text_only",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.007931
+    },
+    {
+      "run_id": "5f8d57ec-77af-449c-8753-81022a26ec18",
+      "question_id": "aapl-netincomeloss-delta-2025",
+      "variant": "compute",
+      "outcome": "ok",
+      "n_steps": 6,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.024788
+    },
+    {
+      "run_id": "5204a62f-52ac-45f5-ad33-b33bb6e62150",
+      "question_id": "aapl-netincomeloss-delta-2025",
+      "variant": "tight",
+      "outcome": "ok",
+      "n_steps": 4,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.011845
+    },
+    {
+      "run_id": "ca4e8946-5059-46df-82f3-463358aca33a",
+      "question_id": "aapl-netincomeloss-2023",
+      "variant": "full",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.007701
+    },
+    {
+      "run_id": "5449b47c-a778-437a-9a99-15b0eda07428",
+      "question_id": "aapl-netincomeloss-2023",
+      "variant": "facts_only",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.006027
+    },
+    {
+      "run_id": "3d240193-cdc5-4b4c-b3b3-06e970b9cfb5",
+      "question_id": "aapl-netincomeloss-2023",
+      "variant": "text_only",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.008015
+    },
+    {
+      "run_id": "e7363e14-9792-442c-9237-85076b128660",
+      "question_id": "aapl-netincomeloss-2023",
+      "variant": "compute",
+      "outcome": "ok",
+      "n_steps": 3,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.010375
+    },
+    {
+      "run_id": "2707de68-2386-4987-8e5a-ee3b07dfadc3",
+      "question_id": "aapl-netincomeloss-2023",
+      "variant": "tight",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.007701
+    },
+    {
+      "run_id": "fa02585a-20ce-42db-8e44-1c4d7f2e07e7",
+      "question_id": "aapl-grossprofit-2025",
+      "variant": "full",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.008996
+    },
+    {
+      "run_id": "d3c73032-5f0e-43eb-a4ec-0baec1c422a2",
+      "question_id": "aapl-grossprofit-2025",
+      "variant": "facts_only",
+      "outcome": "ok",
+      "n_steps": 3,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.010801
+    },
+    {
+      "run_id": "f9ce4f09-0e30-4d25-832a-3b68d17a76ba",
+      "question_id": "aapl-grossprofit-2025",
+      "variant": "text_only",
+      "outcome": "ok",
+      "n_steps": 3,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 1,
+      "list_usd": 0.013891
+    },
+    {
+      "run_id": "d43749f0-fdf8-4332-b80b-2d1a56372130",
+      "question_id": "aapl-grossprofit-2025",
+      "variant": "compute",
+      "outcome": "ok",
+      "n_steps": 4,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.012331
+    },
+    {
+      "run_id": "c9d7f75c-7115-4b4d-a31f-ce8751286ca7",
+      "question_id": "aapl-grossprofit-2025",
+      "variant": "tight",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.008996
+    },
+    {
+      "run_id": "2f040076-802b-4423-a499-947b5d199752",
+      "question_id": "aapl-grossprofit-delta-2025",
+      "variant": "full",
+      "outcome": "no_tool_call",
+      "n_steps": 6,
+      "all_steps_pass": false,
+      "answer_correct": false,
+      "first_failing_step": 0,
+      "list_usd": 0.027306
+    },
+    {
+      "run_id": "525df691-92e3-473f-969f-2bdfe363c1d9",
+      "question_id": "aapl-grossprofit-delta-2025",
+      "variant": "facts_only",
+      "outcome": "ok",
+      "n_steps": 4,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.012358
+    },
+    {
+      "run_id": "d7c92b12-a783-4cc2-8bc9-b456bdf538e8",
+      "question_id": "aapl-grossprofit-delta-2025",
+      "variant": "text_only",
+      "outcome": "ok",
+      "n_steps": 3,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.014093
+    },
+    {
+      "run_id": "6ab75eb6-6bd3-49dc-bcfc-d3a33acfd5cf",
+      "question_id": "aapl-grossprofit-delta-2025",
+      "variant": "compute",
+      "outcome": "ok",
+      "n_steps": 6,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 4,
+      "list_usd": 0.03135
+    },
+    {
+      "run_id": "7f21eab9-bac5-4d31-a7fb-00e4d398d48a",
+      "question_id": "aapl-grossprofit-delta-2025",
+      "variant": "tight",
+      "outcome": "max_steps",
+      "n_steps": 4,
+      "all_steps_pass": false,
+      "answer_correct": false,
+      "first_failing_step": 0,
+      "list_usd": 0.013079
+    },
+    {
+      "run_id": "82f22267-9a95-4eb0-b7f8-52cf241dc893",
+      "question_id": "aapl-grossprofit-2024",
+      "variant": "full",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.009401
+    },
+    {
+      "run_id": "d2fe01d4-6fe1-4df2-9cec-60766ba8d09f",
+      "question_id": "aapl-grossprofit-2024",
+      "variant": "facts_only",
+      "outcome": "ok",
+      "n_steps": 3,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.011108
+    },
+    {
+      "run_id": "4ca949b1-9cca-4086-be8f-2a9f6eaeeb28",
+      "question_id": "aapl-grossprofit-2024",
+      "variant": "text_only",
+      "outcome": "ok",
+      "n_steps": 3,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.013617
+    },
+    {
+      "run_id": "61731bb5-6e98-4fb3-9f54-bfa2e8357576",
+      "question_id": "aapl-grossprofit-2024",
+      "variant": "compute",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.006544
+    },
+    {
+      "run_id": "d229f2ae-ae51-4be6-8911-fd1f4a9503f7",
+      "question_id": "aapl-grossprofit-2024",
+      "variant": "tight",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.009401
+    },
+    {
+      "run_id": "c96c1400-4f4a-404f-8d2c-00713f034755",
+      "question_id": "aapl-grossprofit-2023",
+      "variant": "full",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.007045
+    },
+    {
+      "run_id": "5651a8d4-fd80-48f5-a2e9-3a9a6d5ab071",
+      "question_id": "aapl-grossprofit-2023",
+      "variant": "facts_only",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.006275
+    },
+    {
+      "run_id": "398acc65-8cf4-42ba-94c0-479a317afaca",
+      "question_id": "aapl-grossprofit-2023",
+      "variant": "text_only",
+      "outcome": "max_steps",
+      "n_steps": 4,
+      "all_steps_pass": false,
+      "answer_correct": false,
+      "first_failing_step": 0,
+      "list_usd": 0.024661
+    },
+    {
+      "run_id": "ed9b852a-1c15-4e33-be2e-75cba128a66e",
+      "question_id": "aapl-grossprofit-2023",
+      "variant": "compute",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.006647
+    },
+    {
+      "run_id": "8d62605c-ed76-47b8-a436-7727d051e16a",
+      "question_id": "aapl-grossprofit-2023",
+      "variant": "tight",
+      "outcome": "ok",
+      "n_steps": 2,
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.007045
+    },
+    {
+      "run_id": "493f977d-ba20-4736-aa4b-5b07ad3c9f8d",
+      "question_id": "aapl-operatingincomeloss-delta-2025",
+      "variant": "full",
+      "outcome": "no_tool_call",
+      "n_steps": 5,
+      "all_steps_pass": false,
+      "answer_correct": false,
+      "first_failing_step": 3,
+      "list_usd": 0.018533
+    },
+    {
+      "run_id": "e7ff8387-11ee-47bc-bc1f-1c25de38cb8f",
+      "question_id": "aapl-operatingincomeloss-delta-2025",
+      "variant": "facts_only",
+      "outcome": "ok",
+      "n_steps": 3,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 2,
+      "list_usd": 0.006861
+    },
+    {
+      "run_id": "02e071d3-31ca-40c6-a5eb-fce85b6d31bb",
+      "question_id": "aapl-operatingincomeloss-delta-2025",
+      "variant": "text_only",
+      "outcome": "ok",
+      "n_steps": 3,
+      "all_steps_pass": false,
+      "answer_correct": true,
+      "first_failing_step": 0,
+      "list_usd": 0.013624
+    },
+    {
+      "run_id": "75fe9b3d-8e9d-4196-8a21-88dc9b4cf7d1",
+      "question_id": "aapl-operatingincomeloss-delta-2025",
+      "variant": "compute",
+      "outcome": "max_steps",
+      "n_steps": 6,
+      "all_steps_pass": false,
+      "answer_correct": false,
+      "first_failing_step": 0,
+      "list_usd": 0.026073
+    },
+    {
+      "run_id": "ae49d8b4-42c1-43bf-b4a2-f5d10669583b",
       "question_id": "aapl-operatingincomeloss-delta-2025",
       "variant": "tight",
-      "outcome": "no_tool_call",
+      "outcome": "max_steps",
       "n_steps": 4,
       "all_steps_pass": false,
       "answer_correct": false,
       "first_failing_step": 3,
-      "list_usd": 0.016201
+      "list_usd": 0.01255
     },
     {
-      "run_id": "e9019c31-6284-4d18-886b-d708be38f93b",
+      "run_id": "3b7df551-aaf0-4467-b35f-35d393634379",
       "question_id": "aapl-operatingincomeloss-2025",
       "variant": "full",
-      "outcome": "no_tool_call",
+      "outcome": "ok",
       "n_steps": 2,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 1,
-      "list_usd": 0.009398
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.009672
     },
     {
-      "run_id": "b01ee759-828a-488b-9ab7-ea295f5bf1a4",
+      "run_id": "05d88698-7c4a-47a9-958d-848b77524e13",
       "question_id": "aapl-operatingincomeloss-2025",
       "variant": "facts_only",
-      "outcome": "no_tool_call",
+      "outcome": "ok",
       "n_steps": 2,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 1,
-      "list_usd": 0.007467
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.007641
     },
     {
-      "run_id": "e28146be-7683-4b1e-bb16-cc9c4c8880d4",
+      "run_id": "4ebc3c78-7354-470b-912a-67ee186e9a12",
       "question_id": "aapl-operatingincomeloss-2025",
       "variant": "text_only",
       "outcome": "ok",
@@ -565,10 +565,10 @@
       "all_steps_pass": false,
       "answer_correct": true,
       "first_failing_step": 0,
-      "list_usd": 0.014126
+      "list_usd": 0.013256
     },
     {
-      "run_id": "68a63b0f-702c-47bb-963c-e8d3d7babde9",
+      "run_id": "0a51d228-e69d-4634-aac2-acaaea937c88",
       "question_id": "aapl-operatingincomeloss-2025",
       "variant": "compute",
       "outcome": "ok",
@@ -576,18 +576,18 @@
       "all_steps_pass": true,
       "answer_correct": true,
       "first_failing_step": null,
-      "list_usd": 0.006996
+      "list_usd": 0.006676
     },
     {
-      "run_id": "827fb085-b78b-4c74-a202-b123a1cd4e0c",
+      "run_id": "6e39135c-0426-4d60-aa73-91e1f8171aff",
       "question_id": "aapl-operatingincomeloss-2025",
       "variant": "tight",
-      "outcome": "no_tool_call",
+      "outcome": "ok",
       "n_steps": 2,
-      "all_steps_pass": false,
-      "answer_correct": false,
-      "first_failing_step": 1,
-      "list_usd": 0.009398
+      "all_steps_pass": true,
+      "answer_correct": true,
+      "first_failing_step": null,
+      "list_usd": 0.009672
     }
   ]
 }

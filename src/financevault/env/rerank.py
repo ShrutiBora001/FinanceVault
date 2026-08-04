@@ -52,7 +52,10 @@ def score(query: str, passages: list[str]) -> list[Scored]:
         return []
     raw = model().predict([(query, p) for p in passages])
     ranked = [Scored(index=i, score=float(s)) for i, s in enumerate(raw)]
-    ranked.sort(key=lambda s: s.score, reverse=True)
+    # Index is the tie-break. Python's sort is stable, but equal scores arriving in a
+    # different input order would still reorder the output -- and the input order comes
+    # from SQL, which is only deterministic if every query says so.
+    ranked.sort(key=lambda s: (-s.score, s.index))
     return ranked
 
 

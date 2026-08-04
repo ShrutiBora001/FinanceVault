@@ -21,14 +21,39 @@ from financevault.env.asof import AsOf
 from financevault.runtime.budget import Ledger
 from financevault.store import pg
 
-SPLIT = Path("eval/splits/mvp_20.jsonl")
+SPLIT = Path("eval/splits/mvp_150.jsonl")
 RESULTS = Path("eval/results")
 
 
-def load_split(path: Path = SPLIT) -> list[dict]:
+def load_split(path: Path = SPLIT, subset: str | None = None) -> list[dict]:
+    """Load the frozen split, optionally restricted to train/dev/test.
+
+    `subset` defaults to everything. Development should read `dev` and leave `test` alone:
+    a test set you have iterated against is a validation set wearing the wrong label.
+    """
     if not path.exists():
         raise FileNotFoundError(f"{path} missing — run `python scripts/make_split.py`")
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    if subset:
+        rows = [r for r in rows if r.get("split") == subset]
+    return rows
+
+
+def wilson_interval(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """A 95% confidence interval for a proportion, by the Wilson score method.
+
+    Wilson rather than the normal approximation because the normal one is badly wrong at the
+    edges — with 31 questions and a policy scoring 100%, it gives the interval [1.0, 1.0],
+    which asserts certainty from a sample that cannot support it. Wilson keeps a sensible
+    width at 0 and 1, which is exactly where a benchmark's headline numbers sit.
+    """
+    if n == 0:
+        return (0.0, 0.0)
+    p = successes / n
+    denominator = 1 + z**2 / n
+    centre = (p + z**2 / (2 * n)) / denominator
+    spread = z * ((p * (1 - p) / n + z**2 / (4 * n**2)) ** 0.5) / denominator
+    return (max(0.0, centre - spread), min(1.0, centre + spread))
 
 
 @dataclass(slots=True)
@@ -126,6 +151,7 @@ def summarise(name: str, outcomes: list[Outcome]) -> dict[str, Any]:
         "n": len(outcomes),
         # D1: did it get the number right?
         "d1_accuracy": round(len(correct) / n, 4),
+        "d1_ci95": [round(b, 4) for b in wilson_interval(len(correct), len(outcomes))],
         # D2: share of numeric claims not traceable to retrieved evidence.
         "d2_unsupported_claim_rate": round(sum(o.unsupported_claims for o in outcomes) / n, 4),
         # D3: the share of *steps* that verify, which is what localises a gain.
@@ -168,13 +194,15 @@ def main() -> int:
     from financevault.config import settings
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--policies", default="b1-rag,b2-tools")
+    parser.add_argument("--policies", default="b0-no-tools,b1-rag,b2-tools,b3-frontier")
+    parser.add_argument("--subset", default="dev", help="train | dev | test | all")
     parser.add_argument("--limit", type=int, default=0, help="first N questions (0 = all)")
     parser.add_argument("--out", default=None)
     args = parser.parse_args()
 
     console = Console()
-    questions = load_split()
+    subset = None if args.subset == "all" else args.subset
+    questions = load_split(subset=subset)
     if args.limit:
         questions = questions[: args.limit]
 
@@ -184,7 +212,7 @@ def main() -> int:
 
     replay = settings().replay
     console.print(
-        f"[bold]{len(questions)}[/bold] questions | "
+        f"[bold]{len(questions)}[/bold] questions ({args.subset}) | "
         f"analyst=[cyan]{settings().analyst_model}[/cyan] | "
         f"judge=[cyan]{settings().judge_model}[/cyan] | "
         + ("[green]REPLAY[/green]" if replay else "[yellow]LIVE[/yellow]")
@@ -207,6 +235,7 @@ def main() -> int:
     table = Table(title="MVP1 baselines", header_style="bold")
     table.add_column("policy")
     table.add_column("D1 acc", justify="right")
+    table.add_column("95% CI", justify="right")
     table.add_column("D2 unsup", justify="right")
     table.add_column("D3 step", justify="right")
     table.add_column("E1 $/correct", justify="right")
@@ -217,6 +246,7 @@ def main() -> int:
         table.add_row(
             s["policy"],
             f"{s['d1_accuracy']:.0%}",
+            f"{s['d1_ci95'][0]:.0%}-{s['d1_ci95'][1]:.0%}",
             f"{s['d2_unsupported_claim_rate']:.0%}",
             f"{s['d3_step_pass_rate']:.0%}",
             "—" if s["e1_cost_per_correct"] is None else f"${s['e1_cost_per_correct']:.4f}",
@@ -234,7 +264,8 @@ def main() -> int:
     )
 
     RESULTS.mkdir(parents=True, exist_ok=True)
-    out = Path(args.out) if args.out else RESULTS / ("mvp1_replay.json" if replay else "mvp1.json")
+    default_name = f"mvp2.2_{args.subset}{'_replay' if replay else ''}.json"
+    out = Path(args.out) if args.out else RESULTS / default_name
     out.write_text(
         json.dumps(
             {
@@ -242,6 +273,7 @@ def main() -> int:
                 "analyst_model": settings().analyst_model,
                 "judge_model": settings().judge_model,
                 "n_questions": len(questions),
+                "subset": args.subset,
                 "journal_spend_usd": spent,
                 "policies": summaries,
             },

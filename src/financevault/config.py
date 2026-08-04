@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     judge_model: str = "claude-haiku-4-5"
     analyst_model: str = "claude-haiku-4-5"
+    # B3 only. The ceiling the efficiency frontier is plotted against; never the default,
+    # because a benchmark whose baseline is the expensive model has no cost story to tell.
+    frontier_model: str = "claude-sonnet-5"
     # Thinking depth and overall spend on the analyst path. Ignored on models that predate the
     # parameter -- Haiku 4.5 rejects it outright, so `llm.call` drops it rather than passing
     # it through. Kept configurable so the efficiency benchmark can sweep it.

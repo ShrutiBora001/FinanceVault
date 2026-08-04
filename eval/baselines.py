@@ -4,15 +4,19 @@ A policy is anything that turns a question into a `Run`. Keeping them behind one
 means the harness, the verifier and the metrics do not know which is which — a baseline
 cannot accidentally be measured differently from the system it is a baseline for.
 
-MVP1 ships two:
+Four policies:
 
-- **B1 — single-shot RAG.** Retrieve, then answer in one pass, no tools and no second look.
-  This is the thing the project claims to beat, and it is deliberately a *fair* version of it:
-  same corpus, same as-of horizon, same model. The only thing it lacks is the agent loop.
-- **B2 — tools.** The full executor.
-
-B0 (no tools) and B3 (frontier model with tools) arrive in MVP2.2, where the analyst model
-becomes an experimental variable rather than a cost setting.
+- **B0 — no tools.** The model answers from parametric memory alone. This is the floor, and it
+  is not a joke baseline: a model that has read a lot of filings can produce a right answer
+  with no retrieval at all, and the gap between B0 and the rest is how much of the system's
+  accuracy is actually *the system*. It also has no as-of horizon it can respect, so every
+  answer it gets right is one it could only have got from training data.
+- **B1 — single-shot RAG.** Retrieve, then answer in one pass. Deliberately a *fair* version
+  of the thing the project claims to beat: same corpus, same horizon, same model. What it
+  lacks is the ability to look again after seeing what came back.
+- **B2 — tools.** The full executor on the cheap model.
+- **B3 — frontier model with tools.** The same executor on a stronger model. The ceiling, and
+  the only run that gives the efficiency frontier something to plot against.
 """
 
 from __future__ import annotations
@@ -31,6 +35,16 @@ from financevault.runtime.executor import Run, Step
 from financevault.tools import REGISTRY, ToolContext
 
 Policy = Callable[..., Run]
+
+B0_SYSTEM = """You answer questions about company financials from your own knowledge.
+
+You have no tools and no documents. Answer as accurately as you can, and say so plainly if you
+do not know rather than guessing at a figure.
+
+End your reply with a line in exactly this form, giving the figure in base units with no
+commas, symbols or scale words:
+
+VALUE: <number>"""
 
 B1_SYSTEM = """You answer questions about company financials from the excerpts provided.
 
@@ -148,6 +162,74 @@ def b1_rag(
     return run
 
 
+def b0_no_tools(
+    question: str,
+    *,
+    as_of: AsOf,
+    cik: str | None = None,
+    ticker: str | None = None,
+    persist: bool = True,
+) -> Run:
+    """No tools, no retrieval: whatever the model already knows.
+
+    Note what a correct answer here means. There is no corpus and no horizon, so B0 cannot
+    respect an as-of date even in principle — anything it gets right came from training data,
+    which for recent filings is both unreliable and unauditable. B0 scoring well on a question
+    is a reason to distrust that question, not to trust B0.
+    """
+    cfg = settings()
+    ledger = Ledger(max_usd=cfg.max_usd, max_steps=2)
+    started = time.monotonic()
+
+    answer, value, outcome = None, None, "ok"
+    steps: list[Step] = []
+    try:
+        completion = llm.call(
+            cfg.analyst_model,
+            [{"role": "user", "content": f"Question: {question}\nCompany: {ticker or cik}"}],
+            ledger=ledger,
+            system=B0_SYSTEM,
+            thinking=False,
+            max_tokens=512,
+            label="b0-answer",
+        )
+        answer = completion.text.strip()
+        value = _parse_value(answer)
+        steps.append(
+            Step(
+                idx=0,
+                thought="",
+                tool="finish",
+                args={"answer": answer, "value": value, "citations": []},
+                observation={"ok": True, "data": {"answer": answer, "value": value}},
+                tokens_in=completion.tokens_in,
+                tokens_out=completion.tokens_out,
+                cost_usd=completion.cost_usd,
+            )
+        )
+    except BudgetExceeded:
+        outcome = "budget_exceeded"
+
+    run = Run(
+        id=str(uuid.uuid4()),
+        question=question,
+        as_of=as_of,
+        policy="b0-no-tools",
+        path="P0",
+        outcome=outcome,
+        answer=answer,
+        citations=[],
+        value=value,
+        unit="USD",
+        steps=steps,
+        ledger=ledger,
+    )
+    run.ledger.started = started
+    if persist:
+        executor.save(run)
+    return run
+
+
 def b2_tools(
     question: str,
     *,
@@ -167,9 +249,37 @@ def b2_tools(
     )
 
 
+def b3_frontier(
+    question: str,
+    *,
+    as_of: AsOf,
+    cik: str | None = None,
+    ticker: str | None = None,
+    persist: bool = True,
+) -> Run:
+    """The full agent loop on a stronger model.
+
+    Identical to B2 in every respect but the model, so the difference between them is the
+    model and nothing else. That is the only way the efficiency frontier means anything: if
+    B3 also changed the prompt or the toolset, its position on the plot would be
+    uninterpretable.
+    """
+    return executor.execute(
+        question,
+        as_of=as_of,
+        cik=cik,
+        ticker=ticker,
+        policy="b3-frontier",
+        model=settings().frontier_model,
+        persist=persist,
+    )
+
+
 POLICIES: dict[str, Policy] = {
+    "b0-no-tools": b0_no_tools,
     "b1-rag": b1_rag,
     "b2-tools": b2_tools,
+    "b3-frontier": b3_frontier,
 }
 
 

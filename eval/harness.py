@@ -69,6 +69,8 @@ class Outcome:
     latency_ms: int
     n_steps: int
     outcome: str
+    n_calls: int = 0
+    cached_calls: int = 0
     step_scores: list[dict[str, float]] = field(default_factory=list)
     unsupported_claims: float = 0.0
 
@@ -79,6 +81,16 @@ class Outcome:
             for s in self.step_scores
             if all(s.get(k, 1.0) >= 0.5 for k in ("s1", "s2", "s3", "s4"))
         )
+
+    @property
+    def timed_cold(self) -> bool:
+        """Whether this run's wall time measures the policy rather than the journal.
+
+        A run served entirely from cache returns in the time it takes to hash a key and read
+        a row. That is a real number about the harness and a meaningless one about the
+        policy, so it must not enter E2.
+        """
+        return self.n_calls > 0 and self.cached_calls == 0
 
 
 def _percentile(values: list[float], pct: float) -> float:
@@ -130,6 +142,10 @@ def run_policy(name: str, questions: list[dict], *, verify_steps: bool = True) -
                 latency_ms=latency_ms,
                 n_steps=len(run.steps),
                 outcome=run.outcome,
+                n_calls=len(run.ledger.entries) if run.ledger else 0,
+                cached_calls=(
+                    sum(1 for e in run.ledger.entries if e["cached"]) if run.ledger else 0
+                ),
                 step_scores=[v.scores() for v in verdicts],
                 unsupported_claims=(1.0 - terminal.signals["s3"].score if terminal else 1.0),
             )
@@ -142,7 +158,14 @@ def summarise(name: str, outcomes: list[Outcome]) -> dict[str, Any]:
     correct = [o for o in outcomes if o.correct]
     total_steps = sum(len(o.step_scores) for o in outcomes)
     passed_steps = sum(o.steps_passed for o in outcomes)
-    latencies = [float(o.latency_ms) for o in outcomes]
+    # E2 is measured only on runs that actually called the model. Mixing cached runs into the
+    # distribution does not add noise, it changes what is being measured: a journal hit is a
+    # hash and a row read, so a fully-cached sweep reports single-digit milliseconds for a
+    # policy that takes seconds. The first sweep compared 4-73ms cache lookups for three
+    # policies against 17,333ms of live API calls for the fourth and presented it as a latency
+    # comparison between policies.
+    timed = [o for o in outcomes if o.timed_cold]
+    latencies = [float(o.latency_ms) for o in timed]
     spend = sum(o.cost_usd for o in outcomes)
     list_spend = sum(o.list_usd for o in outcomes)
 
@@ -160,8 +183,12 @@ def summarise(name: str, outcomes: list[Outcome]) -> dict[str, Any]:
         # List cost, not actual: E1 describes the policy, so it must not collapse to
         # zero merely because a previous sweep already journalled these calls.
         "e1_cost_per_correct": round(list_spend / len(correct), 6) if correct else None,
-        "e2_p50_latency_ms": int(_percentile(latencies, 50)),
-        "e2_p95_latency_ms": int(_percentile(latencies, 95)),
+        # None rather than 0 when nothing ran cold: a replayed sweep has no latency to report,
+        # and saying so is the only honest option. `e2_n` travels with the figures so a reader
+        # can see how many runs they rest on.
+        "e2_p50_latency_ms": int(_percentile(latencies, 50)) if timed else None,
+        "e2_p95_latency_ms": int(_percentile(latencies, 95)) if timed else None,
+        "e2_n": len(timed),
         "total_list_usd": round(list_spend, 6),
         "total_spent_usd": round(spend, 6),
         "mean_steps": round(sum(o.n_steps for o in outcomes) / n, 2),
@@ -240,6 +267,7 @@ def main() -> int:
     table.add_column("D3 step", justify="right")
     table.add_column("E1 $/correct", justify="right")
     table.add_column("E2 p95 ms", justify="right")
+    table.add_column("E2 n", justify="right")
     table.add_column("steps", justify="right")
     table.add_column("list $", justify="right")
     for s in summaries:
@@ -250,12 +278,20 @@ def main() -> int:
             f"{s['d2_unsupported_claim_rate']:.0%}",
             f"{s['d3_step_pass_rate']:.0%}",
             "—" if s["e1_cost_per_correct"] is None else f"${s['e1_cost_per_correct']:.4f}",
-            f"{s['e2_p95_latency_ms']:,}",
+            "—" if s["e2_p95_latency_ms"] is None else f"{s['e2_p95_latency_ms']:,}",
+            f"{s['e2_n']}/{s['n']}",
             f"{s['mean_steps']}",
             f"${s['total_list_usd']:.4f}",
         )
     console.print()
     console.print(table)
+
+    if any(s["e2_n"] < s["n"] for s in summaries):
+        console.print(
+            "\n[yellow]E2 note[/yellow] latency covers only runs that called the model. "
+            "Cached runs measure the journal, not the policy, and are excluded — "
+            "a policy showing [bold]0/n[/bold] replayed entirely and has no latency to report."
+        )
 
     spent = round(float(after.get("usd", 0)) - float(before.get("usd", 0)), 6)
     console.print(

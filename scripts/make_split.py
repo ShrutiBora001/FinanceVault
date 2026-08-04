@@ -87,12 +87,30 @@ RATIOS = [
     ("OperatingIncomeLoss", "Revenues", "operating margin"),
 ]
 
-FACTS_SQL = """
-SELECT DISTINCT ON (tag, period_end) tag, period_end, value, accepted_at
+# A 10-K reports annual *and* quarterly figures, and they can share an end date: Apple's
+# FY2018 net income and its Q4-2018 net income both end 2018-09-29. Selecting on `period_end`
+# alone therefore picks a quarter at random and labels it a fiscal year.
+#
+# That produced three lookup questions whose "fiscal year" answer was a single quarter, and
+# every one of the 25 ratio questions, which paired a full-year numerator against a
+# single-quarter denominator -- Apple's FY2018 net margin came out at 94.64% instead of 22.4%.
+# All four policies scored 0% on ratios, which read like a capability finding and was a
+# generator bug.
+#
+# `ANNUAL_DAYS` is 300 rather than 365 because fiscal years are 52 or 53 weeks and land
+# between 358 and 371 days; 300 separates them from a quarter with room to spare.
+ANNUAL_DAYS = 300
+
+FACTS_SQL = f"""
+SELECT DISTINCT ON (tag, period_end) tag, period_start, period_end, value, accepted_at
 FROM xbrl_facts
 WHERE cik = %(cik)s AND unit = 'USD' AND form = '10-K' AND tag = ANY(%(tags)s)
   AND period_end IS NOT NULL
   AND (period_start IS NOT NULL) = %(duration)s
+  AND (
+        %(duration)s = false
+     OR (period_end - period_start) > {ANNUAL_DAYS}
+  )
 ORDER BY tag, period_end DESC, accepted_at DESC
 """
 
@@ -209,11 +227,19 @@ def build(per_company: int) -> list[dict]:
         # Ratios: both legs must exist for the same period, which excludes sectors that do
         # not report one of them rather than producing an unanswerable question.
         for numerator, denominator, label in RATIOS:
-            num_facts = {f["period_end"]: f for f in duration.get(numerator, [])}
-            den_facts = {f["period_end"]: f for f in duration.get(denominator, [])}
-            shared = sorted(set(num_facts) & set(den_facts), reverse=True)[:2]
-            for period in shared:
-                num, den = num_facts[period], den_facts[period]
+            # Keyed on the *whole* period, not just its end. Two figures are comparable only
+            # if they cover the same span, and the query above already restricts both to
+            # annual, so this is belt and braces against a future relaxation.
+            num_facts = {
+                (f["period_start"], f["period_end"]): f for f in duration.get(numerator, [])
+            }
+            den_facts = {
+                (f["period_start"], f["period_end"]): f for f in duration.get(denominator, [])
+            }
+            shared = sorted(set(num_facts) & set(den_facts), key=lambda p: p[1], reverse=True)[:2]
+            for span in shared:
+                num, den = num_facts[span], den_facts[span]
+                period = span[1]
                 if not float(den["value"]):
                     continue
                 fy = fiscal_year(period)

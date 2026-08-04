@@ -29,7 +29,15 @@ from financevault.verify import answer as answer_sig
 from financevault.verify import citation, numeric, relevance, tool_validity
 from financevault.verify.signals import NAMES, SIGNALS, Signal, na
 
-__all__ = ["NAMES", "SIGNALS", "Signal", "StepVerdict", "na", "verify_run"]
+__all__ = [
+    "NAMES",
+    "SIGNALS",
+    "Signal",
+    "StepVerdict",
+    "answered_correctly",
+    "na",
+    "verify_run",
+]
 
 
 @dataclass(slots=True)
@@ -48,6 +56,21 @@ class StepVerdict:
 
     def reasons(self) -> dict[str, str]:
         return {k: v.reason for k, v in self.signals.items()}
+
+
+def answered_correctly(verdicts: list[StepVerdict]) -> bool:
+    """Did this trajectory produce an answer that was checked and found right?
+
+    The single place that question is answered, because getting it wrong is cheap and
+    invisible. A run that never calls `finish` has no terminal step, so `s5` is `n/a` and
+    scores 1.0 — reading the last verdict's score directly counted such runs as correct and
+    inflated a reported accuracy from 85% to 100%.
+
+    Three conditions, all required: a `finish` step exists, `s5` actually applied (there was
+    ground truth to compare against), and it passed.
+    """
+    finish = next((v for v in reversed(verdicts) if v.tool == "finish"), None)
+    return bool(finish and finish.signals["s5"].verified)
 
 
 UPDATE_STEP = """

@@ -97,7 +97,7 @@ def run_policy(name: str, questions: list[dict], *, verify_steps: bool = True) -
                 question_id=q["id"],
                 archetype=q["archetype"],
                 run_id=run.id,
-                correct=bool(terminal and terminal.signals["s5"].score >= 0.5),
+                correct=verify.answered_correctly(verdicts),
                 value=run.value,
                 expected=q["expected_value"],
                 cost_usd=run.ledger.usd if run.ledger else 0.0,

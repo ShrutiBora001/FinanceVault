@@ -103,9 +103,16 @@ def execute(
     model: str | None = None,
     max_steps: int | None = None,
     max_usd: float | None = None,
+    force_path: str | None = None,
     persist: bool = True,
 ) -> Run:
-    """Run one episode and return its trajectory."""
+    """Run one episode and return its trajectory.
+
+    `force_path` pins the execution path instead of asking the router. Rollout generation
+    needs it: with sampling parameters gone and every call journalled, the only way to get
+    structurally different trajectories for the same question is to change the toolset the
+    agent has. It also saves the router call, which a fixed path does not need.
+    """
     cfg = settings()
     model = model or cfg.analyst_model
     ledger = Ledger(
@@ -113,7 +120,15 @@ def execute(
         max_steps=max_steps if max_steps is not None else cfg.max_steps,
     )
 
-    route = router.route(question, ledger=ledger, model=cfg.judge_model)
+    if force_path:
+        route = router.Route(
+            path=force_path,
+            tools=router.PATHS[force_path],
+            reason="forced by caller",
+            cached=False,
+        )
+    else:
+        route = router.route(question, ledger=ledger, model=cfg.judge_model)
     # The router's per-path ceiling narrows the budget but never widens it past the caller's.
     ledger.max_steps = min(ledger.max_steps, route.max_steps)
 

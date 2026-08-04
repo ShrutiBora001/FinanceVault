@@ -21,7 +21,7 @@ RUFF   := $(VENV)/bin/ruff
 # decides the target is up to date, and silently does nothing -- which looks exactly like a
 # successful no-op run.
 .PHONY: help venv venv-embed up down logs psql redis-cli migrate reset test lint fmt clean \
-        split eval replay determinism leak calibrate
+        split eval replay determinism leak calibrate rollout
 
 help:  ## show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -80,6 +80,9 @@ leak:  ## A1: lookahead leak rate, as-of vs naive period_end filtering
 
 calibrate:  ## B2: seeded-error recall per class; gates trajectory generation
 	$(PY) -m bench.verifier_calib
+
+rollout:  ## C1: generate trajectories, verify, build and export the three splits
+	PYTHONPATH=. $(PY) scripts/rollout.py $(ARGS)
 
 reset:  ## DESTRUCTIVE: drop the postgres volume and re-migrate from empty
 	$(COMPOSE) down -v

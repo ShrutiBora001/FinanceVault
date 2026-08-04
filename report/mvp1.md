@@ -16,24 +16,29 @@ MVP2.2's job.
 | policy | D1 accuracy | D2 unsupported | D3 step pass | E1 $/correct | E2 p95 | mean steps | list cost |
 |---|---|---|---|---|---|---|---|
 | **B1** single-shot RAG | 35% | 16% | 20% | $0.0132 | 3,608 ms | 2.0 | $0.0926 |
-| **B2** tools | **100%** | **0%** | **81%** | **$0.0109** | 12,290 ms | 2.9 | $0.2178 |
+| **B2** tools | **85%** | **0%** | **81%** | **$0.0128** | 12,290 ms | 2.9 | $0.2178 |
 
 The comparison is deliberately fair to B1: same corpus, same as-of horizon, same model, same
 verifier. The only thing it lacks is the ability to look again after seeing what came back.
 
 Two things worth drawing out.
 
-**B2 costs 2.4× more in total and is still cheaper per correct answer** — $0.0109 against
+**B2 costs 2.4× more in total and is still cheaper per correct answer** — $0.0128 against
 $0.0132 — because B1 is wrong about two-thirds of the time. A per-token comparison would have
-picked the worse system. This is the entire argument for measuring E1 rather than spend.
+picked the worse system. This is the entire argument for measuring E1 rather than spend. Note
+the margin is thin: on this split the two policies cost almost the same per correct answer.
+
+**B2's 15% failures are all the same failure.** Three of 20 runs ended in prose without ever
+calling `finish`. Not wrong answers — no answer. Every one was on the P4 path, where the agent
+holds all five tools, and the rollouts below show the same pattern far more starkly.
 
 **B2 is slower, by a lot.** 12.3 s at p95 against 3.6 s. Accuracy was bought with latency, and
 on this evidence the trade is worth it; on a latency-sensitive product it might not be.
 
-**D3 is the interesting column.** B2 answers every question correctly while only 81% of its
-steps verify — so roughly a fifth of its steps are wasted or wrong inside trajectories that
-end well. Outcome filtering keeps all of them; step filtering keeps 81%. That divergence is
-the mechanism H1 proposes to exploit, and it is now measured rather than assumed.
+**D3 is the interesting column.** Only 81% of B2's steps verify — roughly a fifth are wasted
+or wrong, including inside trajectories that end well. Outcome filtering keeps all of them;
+step filtering keeps 81%. That divergence is the mechanism H1 proposes to exploit, and the
+rollout section below measures it directly.
 
 ## A1 — lookahead leak rate
 
@@ -97,6 +102,52 @@ not an average. The score stays a fraction for ranking and diagnosis; passing re
 them. The baseline table above is unaffected — in real trajectories `s3` was always 1.0 or
 0.0, never partial — so the stricter rule bites only on the corruption it was built to catch.
 
+## C1 — trajectory generation
+
+50 trajectories: 10 questions under 5 variants. Variants pin the execution path, because with
+sampling parameters removed and every call journalled, the same question asked twice returns
+the identical cached trajectory — diversity has to come from the input.
+
+| | rate |
+|---|---|
+| C1 accept rate (every step verifies) | **26%** |
+| outcome accept rate (answer correct) | **60%** |
+| **correct but flawed** | **34%** |
+| step pass rate | 62% |
+
+| variant | tools | accept | correct |
+|---|---|---|---|
+| facts_only | XBRL lookup | 60% | 90% |
+| compute | SQL + Python | 40% | 70% |
+| text_only | passage retrieval | 30% | 80% |
+| full | all five | **0%** | **30%** |
+| tight | all five, 3 steps | **0%** | **30%** |
+
+Exported: 13 accepted, 10 repaired, 20 hard-negative, 23 step-filtered.
+
+**The divergence is the point.** Outcome filtering keeps 60% of trajectories; step filtering
+keeps 26%. The 34% in between — right answer, at least one bad step — is exactly the data the
+two conditions disagree about, and it bounds how large an effect H1 could possibly detect. A
+divergence near zero would have meant the experiment was unrunnable; 34% means there is
+something to measure.
+
+**The `full` and `tight` rows are a finding, not noise.** Giving the agent every tool makes it
+*worse*: 0% of those trajectories pass step filtering and only 30% reach a correct answer,
+against 90% when restricted to XBRL lookup. The failure mode is consistent — it ends in prose
+without calling `finish`. Constraining the toolset is doing more work here than the agent's
+own routing, which is an argument for the router that MVP2.2 should test properly rather than
+assume.
+
+Two caveats on these numbers:
+
+- **Variant diversity is engineered, not sampled.** Trajectories differ in approach, not in
+  the model's moment-to-moment choices, so they under-represent the near-misses a stochastic
+  policy produces. Forcing `compute` on a simple lookup also manufactures awkwardness a
+  free-running policy would avoid, which inflates the divergence somewhat.
+- **Hard negatives are constructed, not collected.** Organic near-misses are too rare at this
+  scale, so they are built by perturbing accepted answers in ways the verifier is known to
+  catch. Synthetic and easy; a real model's mistakes are subtler.
+
 ## Reproducibility
 
 | | live | replayed |
@@ -133,6 +184,12 @@ may legitimately differ. The determinism is the pipeline's, not the model's.
 
 Listing these is the point of the stage, not an apology for it.
 
+0. **A correctness-accounting bug was found and fixed after the first table was published.**
+   `s5` scores 1.0 when it does not apply, and a run that never calls `finish` has no terminal
+   step — so reading the last verdict's score counted "no answer" as "right answer". B2's
+   accuracy was reported as 100% and is actually 85%. Signals now carry an `applicable` flag
+   and correctness goes through one function, with regression tests. The earlier figure is
+   corrected above.
 1. **Ground truth is circular.** Expected values come from the same XBRL facts the environment
    serves, so an answer can be right without anything being understood. The published
    benchmark needs values read off the filing document itself.

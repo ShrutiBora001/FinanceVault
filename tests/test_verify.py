@@ -281,3 +281,45 @@ def test_s3_catches_the_wrong_period(evidence: Evidence) -> None:
     )
     assert s.score == 0.0
     assert "period" in s.reason
+
+
+# ---------------------------------------------------------------- correctness accounting
+
+
+def test_na_is_not_evidence_of_correctness() -> None:
+    """`n/a` scores 1.0 so a step is not penalised, which is not the same as passing."""
+    from financevault.verify.signals import Signal, na
+
+    assert na("does not apply").passed is True
+    assert na("does not apply").verified is False
+    assert Signal(1.0, "real pass").verified is True
+
+
+def test_a_run_that_never_finished_did_not_answer_correctly() -> None:
+    """Regression: this counted as correct and inflated a reported accuracy 85% -> 100%.
+
+    A run ending in prose has no `finish` step, so s5 is n/a and scores 1.0. Reading the last
+    verdict's score directly treated "no answer" as "right answer".
+    """
+    from financevault.verify import StepVerdict, answered_correctly, na
+    from financevault.verify.signals import Signal
+
+    unfinished = [
+        StepVerdict(idx=0, tool="lookup_fact", signals={"s5": na("not the terminal step")}),
+        StepVerdict(idx=1, tool=None, signals={"s5": na("not the terminal step")}),
+    ]
+    assert answered_correctly(unfinished) is False
+
+    finished = [
+        StepVerdict(idx=0, tool="lookup_fact", signals={"s5": na("not the terminal step")}),
+        StepVerdict(idx=1, tool="finish", signals={"s5": Signal(1.0, "matches expected")}),
+    ]
+    assert answered_correctly(finished) is True
+
+
+def test_a_finished_run_with_no_ground_truth_is_not_correct() -> None:
+    """Unknown is not the same as right."""
+    from financevault.verify import StepVerdict, answered_correctly, na
+
+    verdicts = [StepVerdict(idx=0, tool="finish", signals={"s5": na("no ground truth")})]
+    assert answered_correctly(verdicts) is False

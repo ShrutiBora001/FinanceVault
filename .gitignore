@@ -13,9 +13,9 @@ __pycache__/
 .env.bak.*
 env.md
 
-# data + artifacts
-data/
-!data/.gitkeep
+# data + artifacts. Anchored with a leading slash: a bare `data/` also matches
+# src/financevault/data/, which silently excluded the whole rollout/splits/export package.
+/data/
 # Result tables are the stage's evidence, so they are committed.
 !eval/results/mvp1*.json
 !eval/results/a1_leak.json

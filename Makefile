@@ -71,6 +71,9 @@ replay:  ## re-run the same sweep from the journal; must cost $0.00
 determinism:  ## F1/F2: compare the live and replayed metric tables
 	$(PY) scripts/determinism.py
 
+leak:  ## A1: lookahead leak rate, as-of vs naive period_end filtering
+	$(PY) -m bench.pit_leak
+
 reset:  ## DESTRUCTIVE: drop the postgres volume and re-migrate from empty
 	$(COMPOSE) down -v
 	$(MAKE) up

@@ -18,6 +18,7 @@ data/
 !data/.gitkeep
 # Result tables are the stage's evidence, so they are committed.
 !eval/results/mvp1*.json
+!eval/results/a1_leak.json
 adapters/
 models/
 *.jsonl

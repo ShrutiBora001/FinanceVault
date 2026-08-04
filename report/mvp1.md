@@ -35,6 +35,36 @@ steps verify — so roughly a fifth of its steps are wasted or wrong inside traj
 end well. Outcome filtering keeps all of them; step filtering keeps 81%. That divergence is
 the mechanism H1 proposes to exploit, and it is now measured rather than assumed.
 
+## A1 — lookahead leak rate
+
+24 horizons swept across the corpus. Leakage is judged against acceptance time regardless of
+how each strategy filtered.
+
+| filter | filings leaked | pooled | horizons hit | worst horizon | facts pooled |
+|---|---|---|---|---|---|
+| no filter | 48/96 | 50.00% | 21/24 | 100% | 2.18% |
+| `period_end` (naive) | 10/58 | **17.24%** | **10/24** | 100% | 1.34% |
+| `accepted_at` (FinanceVault) | 0/48 | **0.00%** | **0/24** | 0.00% | **0.00%** |
+
+The `period_end` row is the comparison that counts. It is not a strawman — filtering on the
+fiscal period a document *describes* is the obvious, careful-looking choice, and it is wrong.
+
+Concretely: a 10-Q for the period ending 2025-12-27 was visible at an as-of of 2025-12-27,
+**34 days before it was accepted** on 2026-01-30. A month of future knowledge, from a filter
+that looks correct.
+
+Three qualifications:
+
+- **The filings corpus is 4 documents.** 96 = 4 filings × 24 horizons. The rate is real but
+  thin. The 25,135-fact figures are better powered and lower — 1.34% — simply because most
+  facts are old enough that no horizon reaches them.
+- **"Worst horizon 100%" is less dramatic than it reads.** It means every filing returned at
+  that horizon was unpublished, at a point early in the corpus where only one or two pass the
+  filter at all.
+- **The leak is concentrated, not uniform.** It occurs inside reporting lags — which is
+  exactly when someone asks "what did they just report?". The concentration is the argument,
+  more than the pooled rate.
+
 ## Reproducibility
 
 | | live | replayed |

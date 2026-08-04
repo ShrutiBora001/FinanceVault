@@ -1,0 +1,62 @@
+{
+  "cik": "320193",
+  "n_horizons": 24,
+  "horizon_range": [
+    "2025-10-01",
+    "2026-08-30"
+  ],
+  "n_filings_in_corpus": 4,
+  "filings": {
+    "none": {
+      "returned": 96,
+      "leaked": 48,
+      "pooled_rate": 0.5,
+      "horizons_affected": 21,
+      "worst_horizon_rate": 1.0
+    },
+    "period_end": {
+      "returned": 58,
+      "leaked": 10,
+      "pooled_rate": 0.172414,
+      "horizons_affected": 10,
+      "worst_horizon_rate": 1.0
+    },
+    "accepted_at": {
+      "returned": 48,
+      "leaked": 0,
+      "pooled_rate": 0.0,
+      "horizons_affected": 0,
+      "worst_horizon_rate": 0.0
+    }
+  },
+  "xbrl_facts": {
+    "none": {
+      "returned": 603240,
+      "leaked": 13146,
+      "pooled_rate": 0.021792,
+      "horizons_affected": 21,
+      "worst_horizon_rate": 0.047185
+    },
+    "period_end": {
+      "returned": 598080,
+      "leaked": 7986,
+      "pooled_rate": 0.013353,
+      "horizons_affected": 21,
+      "worst_horizon_rate": 0.032285
+    },
+    "accepted_at": {
+      "returned": 590094,
+      "leaked": 0,
+      "pooled_rate": 0.0,
+      "horizons_affected": 0,
+      "worst_horizon_rate": 0.0
+    }
+  },
+  "worst_period_end_leak": {
+    "gap_days": 34,
+    "as_of": "2025-12-27",
+    "form": "10-Q",
+    "period_end": "2025-12-27",
+    "accepted_at": "2026-01-30T11:01:32+00:00"
+  }
+}

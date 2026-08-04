@@ -1,13 +1,8 @@
 # MVP1 — environment, verifier, and a working baseline table
 
-MVP1 asked one question: does the pipeline work end to end? It does. Every component of the
-full system exists at reduced strength, one path runs from question to verified answer, and
-the whole sweep replays offline for nothing.
+MVP1 asked one question: does the pipeline work end to end? It does. Every component of the full system exists at reduced strength, one path runs from question to verified answer, and the whole sweep replays offline for nothing.
 
-**None of the numbers below are results.** They come from 20 questions about one company,
-answered by the cheapest available model. They demonstrate that the measurement apparatus
-works, not that anything is true about agents. The scale that would make them results is
-MVP2.2's job.
+**None of the numbers below are results.** They come from 20 questions about one company, answered by the cheapest available model. They demonstrate that the measurement apparatus works, not that anything is true about agents. The scale that would make them results is MVP2.2's job.
 
 ## Baselines
 
@@ -18,32 +13,24 @@ MVP2.2's job.
 | **B1** single-shot RAG | 35% | 16% | 20% | $0.0132 | 3,608 ms | 2.0 | $0.0926 |
 | **B2** tools | **85%** | **0%** | **81%** | **$0.0128** | 12,290 ms | 2.9 | $0.2178 |
 
-The comparison is deliberately fair to B1: same corpus, same as-of horizon, same model, same
-verifier. The only thing it lacks is the ability to look again after seeing what came back.
+The comparison is deliberately fair to B1: same corpus, same as-of horizon, same model, same verifier. The only thing it lacks is the ability to look again after seeing what came back.
 
 Two things worth drawing out.
 
-**B2 costs 2.4× more in total and is still cheaper per correct answer** — $0.0128 against
-$0.0132 — because B1 is wrong about two-thirds of the time. A per-token comparison would have
-picked the worse system. This is the entire argument for measuring E1 rather than spend. Note
+**B2 costs 2.4× more in total and is still cheaper per correct answer** — $0.0128 against $0.0132 — because B1 is wrong about two-thirds of the time. A per-token comparison would have picked the worse system. This is the entire argument for measuring E1 rather than spend. Note
 the margin is thin: on this split the two policies cost almost the same per correct answer.
 
-**B2's 15% failures are all the same failure.** Three of 20 runs ended in prose without ever
-calling `finish`. Not wrong answers — no answer. Every one was on the P4 path, where the agent
-holds all five tools, and the rollouts below show the same pattern far more starkly.
+**B2's 15% failures are all the same failure.** Three of 20 runs ended in prose without ever calling `finish`. Not wrong answers — no answer. Every one was on the P4 path, where the agent holds all five tools, and the rollouts below show the same pattern far more starkly.
 
 **B2 is slower, by a lot.** 12.3 s at p95 against 3.6 s. Accuracy was bought with latency, and
 on this evidence the trade is worth it; on a latency-sensitive product it might not be.
 
-**D3 is the interesting column.** Only 81% of B2's steps verify — roughly a fifth are wasted
-or wrong, including inside trajectories that end well. Outcome filtering keeps all of them;
-step filtering keeps 81%. That divergence is the mechanism H1 proposes to exploit, and the
-rollout section below measures it directly.
+**D3 is the interesting column.** Only 81% of B2's steps verify — roughly a fifth are wasted or wrong, including inside trajectories that end well. Outcome filtering keeps all of them;
+step filtering keeps 81%. That divergence is the mechanism H1 proposes to exploit, and the rollout section below measures it directly.
 
 ## A1 — lookahead leak rate
 
-24 horizons swept across the corpus. Leakage is judged against acceptance time regardless of
-how each strategy filtered.
+24 horizons swept across the corpus. Leakage is judged against acceptance time regardless of how each strategy filtered.
 
 | filter | filings leaked | pooled | horizons hit | worst horizon | facts pooled |
 |---|---|---|---|---|---|
@@ -51,30 +38,21 @@ how each strategy filtered.
 | `period_end` (naive) | 10/58 | **17.24%** | **10/24** | 100% | 1.34% |
 | `accepted_at` (FinanceVault) | 0/48 | **0.00%** | **0/24** | 0.00% | **0.00%** |
 
-The `period_end` row is the comparison that counts. It is not a strawman — filtering on the
-fiscal period a document *describes* is the obvious, careful-looking choice, and it is wrong.
+The `period_end` row is the comparison that counts. It is not a straw man — filtering on the fiscal period a document *describes* is the obvious, careful-looking choice, and it is wrong.
 
 Concretely: a 10-Q for the period ending 2025-12-27 was visible at an as-of of 2025-12-27,
-**34 days before it was accepted** on 2026-01-30. A month of future knowledge, from a filter
-that looks correct.
+**34 days before it was accepted** on 2026-01-30. A month of future knowledge, from a filter that looks correct.
 
 Three qualifications:
 
-- **The filings corpus is 4 documents.** 96 = 4 filings × 24 horizons. The rate is real but
-  thin. The 25,135-fact figures are better powered and lower — 1.34% — simply because most
-  facts are old enough that no horizon reaches them.
-- **"Worst horizon 100%" is less dramatic than it reads.** It means every filing returned at
-  that horizon was unpublished, at a point early in the corpus where only one or two pass the
-  filter at all.
-- **The leak is concentrated, not uniform.** It occurs inside reporting lags — which is
-  exactly when someone asks "what did they just report?". The concentration is the argument,
-  more than the pooled rate.
+- **The filings corpus is 4 documents.** 96 = 4 filings × 24 horizons. The rate is real but thin. The 25,135-fact figures are better powered and lower — 1.34% — simply because most facts are old enough that no horizon reaches them.
+- **"Worst horizon 100%" is less dramatic than it reads.** It means every filing returned at that horizon was unpublished, at a point early in the corpus where only one or two pass the filter at all.
+- **The leak is concentrated, not uniform.** It occurs inside reporting lags — which is exactly when someone asks "what did they just report?". The concentration is the argument, more than the pooled rate.
 
 ## B2 — seeded-error detection
 
-Trajectories the verifier already passed, with a known defect injected. Ground truth is
-constructed, so there is no ambiguity about whether the seeded step is wrong.
-
+Trajectories the verifier already passed, with a known defect injected. Ground truth is constructed, so there is no ambiguity about whether the seeded step is wrong.
+  
 | error class | signal | seeded | caught | recall |
 |---|---|---|---|---|
 | off_by_1000 | s3 | 20 | 20 | **100%** |
@@ -147,6 +125,40 @@ Two caveats on these numbers:
 - **Hard negatives are constructed, not collected.** Organic near-misses are too rare at this
   scale, so they are built by perturbing accepted answers in ways the verifier is known to
   catch. Synthetic and easy; a real model's mistakes are subtler.
+
+## LoRA smoke run
+
+The last seam: exported trajectories → tokenizer → training loop → saved adapter → loaded back.
+
+| | |
+|---|---|
+| base model | Qwen3-0.6B |
+| device | MPS |
+| examples | 8 (`step_filtered`) |
+| trainable params | 2,293,760 |
+| total params | 598,343,680 |
+| **E3 trainable fraction** | **0.38%** |
+| adapter reloaded | yes, 2,293,760 LoRA parameters |
+
+**Loss went 0.73 → 0.67 and that means nothing.** Eight examples, eight steps, a 0.6B model.
+The adapter is worthless as a model and no claim rests on it. What this establishes is that
+the path connects — which is worth knowing before MVP2.3 spends real money on an 8B run.
+
+Hard negatives are excluded from training: they carry `label: "reject"`, and training on them
+as positives would teach the model to produce exactly the errors the verifier exists to catch.
+
+## MVP1 exit metrics
+
+| metric | result | bar | |
+|---|---|---|---|
+| A1 lookahead leak rate | **0.00%** (naive: 17.24%) | exactly 0 | pass |
+| B2 seeded-error recall | **95–100%** per class, 0% FPR | > 70% | pass |
+| C1 accept rate | **26%** (outcome filter: 60%) | reported | pass |
+| D1 accuracy | B2 **85%**, B1 35% | B2 > B1 | pass |
+| E1 cost per correct | B2 **$0.0128**, B1 $0.0132 | reported | pass |
+| F1 replay determinism | **100%** (14/14 fields) | > 99% | pass |
+
+`make mvp` runs the chain end to end. Total spend across all of MVP1: **under $1**.
 
 ## Reproducibility
 

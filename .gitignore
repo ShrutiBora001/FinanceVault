@@ -20,6 +20,8 @@ env.md
 !eval/results/mvp1*.json
 !eval/results/a1_leak.json
 !eval/results/b2_seeded.json
+!eval/results/c1_rollout.json
+!eval/results/sft_smoke.json
 adapters/
 models/
 *.jsonl

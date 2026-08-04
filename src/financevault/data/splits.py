@@ -3,8 +3,8 @@
 | split | what it contains | why it exists |
 |---|---|---|
 | `accepted` | every step verified | the positive signal |
-| `repaired` | a trajectory whose first bad step was excised, re-verified | recovers usable prefixes from trajectories a pure filter would discard |
-| `hard_negative` | a near-miss: right tool, wrong unit or period or scale | teaches the boundary, which accepted examples alone never show |
+| `repaired` | a bad step excised, the rest re-verified | recovers prefixes a pure filter discards |
+| `hard_negative` | a near-miss: wrong unit, period or scale | teaches the boundary |
 
 **Repair here is excision, not regeneration.** The plan calls for regenerating the suffix
 after the failing step; that needs the executor to resume from a seeded message history,

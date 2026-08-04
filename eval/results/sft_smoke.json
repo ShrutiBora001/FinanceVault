@@ -1,0 +1,17 @@
+{
+  "model": "Qwen/Qwen3-0.6B",
+  "split": "step_filtered",
+  "n_examples": 8,
+  "device": "mps",
+  "trainable_params": 2293760,
+  "total_params": 598343680,
+  "trainable_fraction": 0.003834,
+  "steps": 8,
+  "first_loss": 0.7338,
+  "last_loss": 0.6741,
+  "adapter_dir": "adapters/step_filtered-smoke",
+  "verify": {
+    "loaded": true,
+    "adapter_params": 2293760
+  }
+}

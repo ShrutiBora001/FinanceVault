@@ -21,7 +21,7 @@ RUFF   := $(VENV)/bin/ruff
 # decides the target is up to date, and silently does nothing -- which looks exactly like a
 # successful no-op run.
 .PHONY: help venv venv-embed up down logs psql redis-cli migrate reset test lint fmt clean \
-        split eval replay determinism leak calibrate rollout
+        split eval replay determinism leak calibrate rollout sft mvp
 
 help:  ## show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -83,6 +83,12 @@ calibrate:  ## B2: seeded-error recall per class; gates trajectory generation
 
 rollout:  ## C1: generate trajectories, verify, build and export the three splits
 	PYTHONPATH=. $(PY) scripts/rollout.py $(ARGS)
+
+sft:  ## LoRA smoke run: proves export -> train -> adapter loads. Not an experiment.
+	PYTHONPATH=. $(PY) scripts/sft.py $(ARGS)
+
+mvp:  ## the whole MVP1 chain, printing every exit metric
+	$(MAKE) leak && $(MAKE) calibrate && $(MAKE) eval && $(MAKE) replay && $(MAKE) determinism && $(MAKE) rollout && $(MAKE) sft
 
 reset:  ## DESTRUCTIVE: drop the postgres volume and re-migrate from empty
 	$(COMPOSE) down -v

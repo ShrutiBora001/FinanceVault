@@ -17,14 +17,27 @@ from financevault.store import pg
 
 console = Console()
 
-# MVP1 is one company. The wider slice mixes tagging habits: a bank, a retailer and a tech
-# company tag the same concepts differently, which surfaces parser bugs early.
+# Ten companies spanning six sectors. The spread is the point, not the count: a bank has no
+# gross profit, an insurer reports premiums rather than revenue, a retailer's fiscal year ends
+# in January, and a pharma company books R&D where a retailer books cost of sales. Those
+# differences are what surface parser bugs that a single company hides.
 COMPANIES: dict[str, int] = {
+    # tech
     "AAPL": 320193,
-    "JPM": 19617,
-    "WMT": 104169,
     "MSFT": 789019,
+    "NVDA": 1045810,
+    # financials -- no gross profit; interest income instead of revenue
+    "JPM": 19617,
+    "BRK-B": 1067983,
+    # retail -- January fiscal year end, so period_end year != calendar year of most of it
+    "WMT": 104169,
+    "COST": 909832,
+    # energy
     "XOM": 34088,
+    # healthcare / pharma
+    "JNJ": 200406,
+    # industrials
+    "CAT": 18230,
 }
 
 
@@ -39,7 +52,7 @@ def ingest_company(ticker: str, cik: int, *, n_filings: int, price_years: int) -
         filing_id = edgar.upsert_filing(filing)
         stats["filings"] += 1
         text = edgar.fetch_document_text(filing)
-        chunks = chunk.split(text)
+        chunks = chunk.split(text, filing.form)
         stats["chunks"] += chunk.store_chunks(filing_id, chunks)
         console.print(
             f"\n    {filing.form} {filing.period_end.date() if filing.period_end else '?'} "

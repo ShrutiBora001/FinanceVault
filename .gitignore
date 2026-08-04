@@ -19,6 +19,7 @@ data/
 # Result tables are the stage's evidence, so they are committed.
 !eval/results/mvp1*.json
 !eval/results/a1_leak.json
+!eval/results/b2_seeded.json
 adapters/
 models/
 *.jsonl

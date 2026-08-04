@@ -70,6 +70,17 @@ def main() -> int:
     for line in mismatches:
         console.print(f"  [red]mismatch[/red] {line}")
 
+    if live["journal_spend_usd"] == 0.0:
+        # A "live" sweep over an already-journalled corpus legitimately costs nothing — the
+        # journal is doing its job. But it means this file cannot supply F2's without-replay
+        # figure, which only a cold journal produces. Say so rather than reporting $0 vs $0
+        # as though the comparison held.
+        console.print(
+            "[yellow]note[/yellow] — the live sweep also cost $0.00, so the journal was "
+            "already warm. F2's without-replay figure must come from a cold journal; see "
+            "report/mvp1.md for the measured value."
+        )
+
     ok = not mismatches and replay["journal_spend_usd"] == 0.0
     if ok:
         console.print("[green]ok[/green] — replay reproduced the table at $0.00")

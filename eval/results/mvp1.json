@@ -3,7 +3,7 @@
   "analyst_model": "claude-haiku-4-5",
   "judge_model": "claude-haiku-4-5",
   "n_questions": 20,
-  "journal_spend_usd": 0.33129,
+  "journal_spend_usd": 0.0,
   "policies": [
     {
       "policy": "b1-rag",
@@ -12,10 +12,10 @@
       "d2_unsupported_claim_rate": 0.1592,
       "d3_step_pass_rate": 0.2,
       "e1_cost_per_correct": 0.013223,
-      "e2_p50_latency_ms": 2246,
-      "e2_p95_latency_ms": 3608,
+      "e2_p50_latency_ms": 22,
+      "e2_p95_latency_ms": 34,
       "total_list_usd": 0.092562,
-      "total_spent_usd": 0.079128,
+      "total_spent_usd": 0.0,
       "mean_steps": 2.0,
       "outcomes": {
         "ok": 20
@@ -32,14 +32,14 @@
       "d2_unsupported_claim_rate": 0.0,
       "d3_step_pass_rate": 0.8103,
       "e1_cost_per_correct": 0.010891,
-      "e2_p50_latency_ms": 6916,
-      "e2_p95_latency_ms": 12290,
+      "e2_p50_latency_ms": 65,
+      "e2_p95_latency_ms": 90,
       "total_list_usd": 0.217825,
-      "total_spent_usd": 0.191368,
+      "total_spent_usd": 0.0,
       "mean_steps": 2.9,
       "outcomes": {
-        "ok": 17,
-        "no_tool_call": 3
+        "no_tool_call": 3,
+        "ok": 17
       },
       "accuracy_by_archetype": {
         "delta": 1.0,

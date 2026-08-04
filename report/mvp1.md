@@ -65,6 +65,38 @@ Three qualifications:
   exactly when someone asks "what did they just report?". The concentration is the argument,
   more than the pooled rate.
 
+## B2 — seeded-error detection
+
+Trajectories the verifier already passed, with a known defect injected. Ground truth is
+constructed, so there is no ambiguity about whether the seeded step is wrong.
+
+| error class | signal | seeded | caught | recall |
+|---|---|---|---|---|
+| off_by_1000 | s3 | 20 | 20 | **100%** |
+| wrong_scale_word | s3 | 19 | 19 | **100%** |
+| wrong_period | s3 | 20 | 20 | **100%** |
+| fabricated_value | s3 | 20 | 20 | **100%** |
+| fabricated_citation | s2 | 20 | 19 | 95% |
+| hallucinated_tool | s1 | 20 | 20 | **100%** |
+| malformed_args | s1 | 15 | 15 | **100%** |
+
+**Control false-positive rate: 0%** — none of the 20 clean trajectories was flagged. Recall
+without this number would be meaningless; a verifier that rejects everything scores 100%.
+
+Recall is reported per class and never pooled, so a weak class cannot hide behind strong ones.
+
+### What this run changed
+
+The first pass scored `wrong_scale_word` at 79%, and the cause was not a detection gap. `s3`
+*detected* every corruption — it named them "off by 1000x" — but an answer restating a figure
+both correctly and with the error scored 0.6, and 0.6 cleared the 0.5 pass threshold. A
+detected fabrication was being averaged against correct claims and passing.
+
+`s3` now carries a threshold of 1.0: "does every figure trace to evidence" is a conjunction,
+not an average. The score stays a fraction for ranking and diagnosis; passing requires all of
+them. The baseline table above is unaffected — in real trajectories `s3` was always 1.0 or
+0.0, never partial — so the stricter rule bites only on the corruption it was built to catch.
+
 ## Reproducibility
 
 | | live | replayed |

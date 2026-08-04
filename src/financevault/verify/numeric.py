@@ -338,6 +338,7 @@ def score(
             0.0,
             f"{len(checkable)} numeric claim(s) but the trajectory retrieved no evidence; "
             "every figure is unsupported",
+            threshold=1.0,
         )
 
     verdicts = [
@@ -350,4 +351,6 @@ def score(
     reason = f"{verified}/{len(verdicts)} claims traced to retrieved evidence"
     if problems:
         reason += "; " + "; ".join(problems[:3])
-    return Signal(verified / len(verdicts), reason)
+    # threshold=1.0: a single untraceable figure fails the step. The score stays a fraction
+    # so it remains useful for ranking and diagnosis, but passing requires all of them.
+    return Signal(verified / len(verdicts), reason, threshold=1.0)

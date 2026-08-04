@@ -1,0 +1,51 @@
+{
+  "n_trajectories": 20,
+  "gate": 0.7,
+  "control_false_positive_rate": 0.0,
+  "control_detail": [],
+  "classes": {
+    "off_by_1000": {
+      "signal": "s3",
+      "seeded": 20,
+      "caught": 20,
+      "recall": 1.0
+    },
+    "wrong_scale_word": {
+      "signal": "s3",
+      "seeded": 19,
+      "caught": 19,
+      "recall": 1.0
+    },
+    "wrong_period": {
+      "signal": "s3",
+      "seeded": 20,
+      "caught": 20,
+      "recall": 1.0
+    },
+    "fabricated_value": {
+      "signal": "s3",
+      "seeded": 20,
+      "caught": 20,
+      "recall": 1.0
+    },
+    "fabricated_citation": {
+      "signal": "s2",
+      "seeded": 20,
+      "caught": 19,
+      "recall": 0.95
+    },
+    "hallucinated_tool": {
+      "signal": "s1",
+      "seeded": 20,
+      "caught": 20,
+      "recall": 1.0
+    },
+    "malformed_args": {
+      "signal": "s1",
+      "seeded": 15,
+      "caught": 15,
+      "recall": 1.0
+    }
+  },
+  "failed_classes": []
+}

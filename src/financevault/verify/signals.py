@@ -24,6 +24,15 @@ NAMES = {
 class Signal:
     score: float
     reason: str
+    # The score at or above which the step passes. Most signals use 0.5, where partial credit
+    # is meaningful — a well-formed call that errored is a reasonable search move.
+    #
+    # `s3` sets it to 1.0, because "does every figure trace to evidence" is a conjunction, not
+    # an average. Seeded-error calibration exposed why: an answer restating a figure both
+    # correctly and with a 1000x error scored 0.6, so the corruption was *detected* and the
+    # step still passed. Averaging a detected fabrication against correct claims lets
+    # corrupted answers into training data.
+    threshold: float = 0.5
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.score <= 1.0:
@@ -31,7 +40,7 @@ class Signal:
 
     @property
     def passed(self) -> bool:
-        return self.score >= 0.5
+        return self.score >= self.threshold
 
 
 def na(reason: str) -> Signal:

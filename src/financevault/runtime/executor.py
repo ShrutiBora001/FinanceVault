@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from financevault.config import settings
+from financevault.env import coverage
 from financevault.env.asof import AsOf
 from financevault.runtime import llm, router
 from financevault.runtime.budget import BudgetExceeded, Ledger
@@ -148,13 +149,18 @@ def execute(
     ctx = ToolContext(as_of=as_of, ledger=ledger, cik=cik, ticker=ticker)
     specs = REGISTRY.specs(route.tools)
 
+    # The document corpus reaches back one year; XBRL facts reach back to 2009. At an older
+    # horizon the document half of the environment is legitimately empty, and an agent that
+    # does not know this explores it until its step budget runs out. Stating the coverage up
+    # front costs one line and saves the run -- see `env.coverage`.
+    note = coverage.at(as_of, cik=cik).advice()
     messages: list[dict[str, Any]] = [
         {
             "role": "user",
             "content": (
                 f"Question: {question}\n"
                 f"As of: {as_of} — information published after this instant does not exist.\n"
-                f"Company: {ticker or cik or 'unspecified'}"
+                f"Company: {ticker or cik or 'unspecified'}" + (f"\nNote: {note}" if note else "")
             ),
         }
     ]

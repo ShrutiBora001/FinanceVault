@@ -71,6 +71,9 @@ class Outcome:
     outcome: str
     n_calls: int = 0
     cached_calls: int = 0
+    # The agent loop alone, excluding the shared router preamble. See `timed_cold`.
+    agent_calls: int = 0
+    cached_agent_calls: int = 0
     step_scores: list[dict[str, float]] = field(default_factory=list)
     unsupported_claims: float = 0.0
 
@@ -86,11 +89,19 @@ class Outcome:
     def timed_cold(self) -> bool:
         """Whether this run's wall time measures the policy rather than the journal.
 
-        A run served entirely from cache returns in the time it takes to hash a key and read
-        a row. That is a real number about the harness and a meaningless one about the
-        policy, so it must not enter E2.
+        A run served entirely from cache returns in the time it takes to hash a key and read a
+        row. That is a real number about the harness and a meaningless one about the policy, so
+        it must not enter E2.
+
+        Judged on the **agent loop only**. The router call runs on the judge model with just
+        the question, so it is identical across policies and is journalled by whichever policy
+        runs first in a sweep. Counting it made every later policy permanently ineligible — B3
+        reported 0/30 across three consecutive sweeps while spending real money on every run.
+        A cached router contributes a sub-millisecond cache read to the wall clock, so
+        excluding it from the test biases E2 downward by less than the rounding on a single
+        API call, against the alternative of having no latency data at all.
         """
-        return self.n_calls > 0 and self.cached_calls == 0
+        return self.agent_calls > 0 and self.cached_agent_calls == 0
 
 
 def _percentile(values: list[float], pct: float) -> float:
@@ -129,6 +140,9 @@ def run_policy(name: str, questions: list[dict], *, verify_steps: bool = True) -
             )
 
         terminal = verdicts[-1] if verdicts else None
+        entries = run.ledger.entries if run.ledger else []
+        # `step-*` is the agent loop; `router` is the shared preamble. See `Outcome.timed_cold`.
+        agent_entries = [e for e in entries if str(e.get("label", "")).startswith("step-")]
         outcomes.append(
             Outcome(
                 question_id=q["id"],
@@ -142,10 +156,10 @@ def run_policy(name: str, questions: list[dict], *, verify_steps: bool = True) -
                 latency_ms=latency_ms,
                 n_steps=len(run.steps),
                 outcome=run.outcome,
-                n_calls=len(run.ledger.entries) if run.ledger else 0,
-                cached_calls=(
-                    sum(1 for e in run.ledger.entries if e["cached"]) if run.ledger else 0
-                ),
+                n_calls=len(entries),
+                cached_calls=sum(1 for e in entries if e["cached"]),
+                agent_calls=len(agent_entries),
+                cached_agent_calls=sum(1 for e in agent_entries if e["cached"]),
                 step_scores=[v.scores() for v in verdicts],
                 unsupported_claims=(1.0 - terminal.signals["s3"].score if terminal else 1.0),
             )

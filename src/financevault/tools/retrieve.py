@@ -78,7 +78,7 @@ LIMIT %(candidates)s
 
 
 def retrieve_handler(args: RetrieveInput, ctx: ToolContext) -> ToolResult:
-    from financevault.env import rerank  # noqa: PLC0415 - defers the torch import
+    from financevault.env import coverage, rerank  # noqa: PLC0415 - defers the torch import
     from financevault.env.chunk import embed_query  # noqa: PLC0415
 
     sql = RETRIEVE_SQL.format(
@@ -99,14 +99,21 @@ def retrieve_handler(args: RetrieveInput, ctx: ToolContext) -> ToolResult:
         params["section"] = args.section
 
     rows = ctx.as_of.check(pg.fetch_all(sql, params))
-    if not rows and args.section:
-        return ToolResult(
-            ok=False,
-            error=(
-                f"no passages in section {args.section!r}. Available sections: "
-                f"{', '.join(available_sections(ctx))}"
-            ),
-        )
+    if not rows:
+        # An empty result has two very different causes and the agent cannot tell them apart
+        # from silence. If no documents exist at this horizon at all, no rephrasing will help
+        # and saying so redirects the run to XBRL instead of spending its budget here.
+        cover = coverage.at(ctx.as_of, cik=ctx.cik)
+        if cover.documents_empty:
+            return ToolResult(ok=False, error=cover.advice())
+        if args.section:
+            return ToolResult(
+                ok=False,
+                error=(
+                    f"no passages in section {args.section!r}. Available sections: "
+                    f"{', '.join(available_sections(ctx))}"
+                ),
+            )
 
     candidates = [
         {

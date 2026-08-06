@@ -39,6 +39,8 @@ def _outcome(
         outcome="ok",
         n_calls=n_calls,
         cached_calls=cached_calls,
+        agent_calls=n_calls,
+        cached_agent_calls=cached_calls,
     )
 
 
@@ -134,3 +136,32 @@ def test_the_confidence_interval_widens_as_the_sample_shrinks() -> None:
     small_width = small["d1_ci95"][1] - small["d1_ci95"][0]
     large_width = large["d1_ci95"][1] - large["d1_ci95"][0]
     assert small_width > large_width
+
+
+def test_a_cached_router_does_not_disqualify_a_live_run() -> None:
+    """Regression: B3 reported 0/30 across three sweeps while paying for every call.
+
+    The router runs on the judge model with just the question, so it is identical across
+    policies and journalled by whichever policy runs first. Counting it made every later
+    policy permanently ineligible for E2.
+    """
+    live = Outcome(
+        question_id="q",
+        archetype="lookup",
+        run_id="r",
+        correct=True,
+        value=1.0,
+        expected=1.0,
+        cost_usd=0.05,
+        list_usd=0.05,
+        latency_ms=9000,
+        n_steps=3,
+        outcome="ok",
+        n_calls=4,
+        cached_calls=1,
+        agent_calls=3,
+        cached_agent_calls=0,
+    )
+    s = summarise("b3-frontier", [live])
+    assert s["e2_n"] == 1
+    assert s["e2_p50_latency_ms"] == 9000

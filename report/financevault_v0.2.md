@@ -33,9 +33,9 @@ only its final answer, and a content-addressed journal that makes repeated evalu
 byte-deterministic. This version reports the environment (40 filings, 291,266 XBRL facts,
 5,949 chunks over 10 companies), a 152-question frozen benchmark with train/dev/test
 separation, and four prompted baselines with confidence intervals. On the 30-question dev
-split, a tool-using agent on a small model reaches **73.3%** numeric accuracy against **86.7%**
-for the same agent on a frontier model, at roughly half the cost per correct answer. Both
-reduce unsupported numeric claims to under 2%, against 16.7% for the same model without tools.
+split, a tool-using agent on a small model reaches **76.7%** numeric accuracy against **93.3%**
+for the same agent on a frontier model, at 1.5× lower cost per correct answer. Both reduce
+unsupported numeric claims to ~2%, against 16.7% for the same model without tools.
 
 The hypothesis the project exists to test — **that filtering agent trajectories at the step
 level produces better fine-tuning data than filtering on final-answer correctness, at equal
@@ -437,7 +437,7 @@ it was 85%. Anything asking "was this right" must check `applicable`, not just t
 out and unrun. E2 latency is unmeasured for structural reasons (§7.4).
 
 Configuration: analyst and judge `claude-haiku-4-5`, frontier `claude-sonnet-5`,
-`max_steps=12`, `max_usd=0.25`, live (non-replay). Sweep cost $0.41 actual, $1.91 list.
+`max_steps=12`, `max_usd=0.25`, live (non-replay). Sweep cost $0.87 actual, $1.89 list.
 
 ### 7.1 Headline table
 
@@ -445,8 +445,8 @@ Configuration: analyst and judge `claude-haiku-4-5`, frontier `claude-sonnet-5`,
 |---|---|---|---|---|---|---|---|
 | B0 no tools | 10.0% | 3.5–25.6% | 16.7% | 0.0% | $0.0085 | 1.00 | $0.03 |
 | B1 RAG | 6.7% | 1.9–21.3% | 0.0% | 6.7% | $0.0478 | 2.00 | $0.10 |
-| B2 Haiku + tools | **73.3%** | 55.6–85.8% | 1.1% | 49.6% | **$0.0245** | 4.43 | $0.54 |
-| B3 Sonnet + tools | **86.7%** | 70.3–94.7% | 1.7% | 52.6% | $0.0482 | 3.87 | $1.25 |
+| B2 Haiku + tools | **76.7%** | 59.1–88.2% | 2.1% | 61.5% | **$0.0273** | 4.33 | $0.63 |
+| B3 Sonnet + tools | **93.3%** | 78.7–98.2% | 1.1% | 64.4% | $0.0406 | 3.37 | $1.14 |
 
 ![Accuracy](figures/f1_accuracy.png)
 
@@ -454,13 +454,15 @@ Configuration: analyst and judge `claude-haiku-4-5`, frontier `claude-sonnet-5`,
 
 ![By archetype](figures/f2_archetype.png)
 
-Lookup is close to solved (B2 93.8%, B3 100%). **Delta is the weakest archetype for both**
-(B2 28.6%, B3 57.1%) despite being conceptually the simplest derived quantity — two figures and
-a subtraction. Ratio sits between (60% and 80%).
+Lookup is solved for both (100%), as is cross-company. The two agents separate on the derived
+archetypes: **delta 42.9% (B2) against 85.7% (B3)**, and **ratio 40% against 80%**.
 
 The ordering is informative: difficulty tracks *the number of facts that must be held
 simultaneously and not confused*, not the arithmetic. Both models retrieve fine and compute
-fine; they mismatch periods.
+fine; the smaller one mismatches periods.
+
+These figures are much stronger than the previous sweep's, and the reason is §7.4 rather than
+anything about the models.
 
 ### 7.3 The ceilings were part of the measurement
 
@@ -491,13 +493,59 @@ used them best, the confound pushed the result in the flattering direction.
 
 ![Routing](figures/f6_routing.png)
 
-### 7.4 Cost, and why latency is absent
+### 7.4 The document corpus is empty at a third of the horizons
+
+The ceiling story in §7.3 has a cause underneath it, found by asking why s4 scored 0.16 on
+`sql` steps against 0.80–1.00 everywhere else.
+
+The two halves of the environment have very different reach. `xbrl_facts` comes from SEC
+`companyfacts` and carries a company's full reporting history — back to 2009. Filing
+*documents* are ingested individually and only the last year exists. So a question with a 2010
+horizon has a fully populated fact table and a **completely empty document corpus**:
+
+| | span |
+|---|---|
+| XBRL facts | 2009-07-22 → 2026-08-03 |
+| filing documents | 2025-08-04 → 2026-08-03 |
+| dev question horizons | 2010-07-31 → 2026-07-30 |
+
+**9 of 30 dev questions had no visible documents at all.** This is correct point-in-time
+behaviour — in 2010 nobody could see a 2025 10-K — but the agent cannot distinguish "no
+documents exist here" from "your query was wrong", so it rephrased and retried into a table
+that would never have rows. Those 9 questions carried nearly every failure:
+
+| | runs | aborted | mean steps |
+|---|---|---|---|
+| B2, corpus empty | 9 | **5** | 6.7 |
+| B2, corpus present | 21 | 2 | 3.5 |
+| B3, corpus empty | 9 | **2** | 6.0 |
+| B3, corpus present | 21 | 0 | 3.0 |
+
+**Fix.** The environment now states its own coverage: `retrieve_filings` returns an explanatory
+error instead of an empty list, and the executor prepends a one-line note when the horizon
+predates the document corpus, naming the window and redirecting to XBRL.
+
+| | before | after |
+|---|---|---|
+| B2 accuracy | 73.3% | **76.7%** |
+| B3 accuracy | 86.7% | **93.3%** |
+| B3 aborted runs | 2/30 | **0/30** |
+| B3 delta accuracy | 57.1% | **85.7%** |
+| s4 (B2 / B3) | 0.47 / 0.54 | **0.53 / 0.65** |
+
+The delta archetype was the headline weakness in the previous sweep and most of it was this:
+delta questions reach further back in time, so they disproportionately landed on empty
+horizons. **This is the third result in this stage where an apparent capability finding was an
+environment defect** — and like the other two, it made the system look worse rather than
+better, which is the direction that does not announce itself.
+
+### 7.5 Cost, and why latency is absent
 
 ![Frontier](figures/f3_frontier.png)
 
-B2 remains roughly half the cost per correct answer ($0.0245 against $0.0482). After the
-ceiling fix this is a **cost-quality trade rather than a free lunch**: 13.4 points of accuracy
-for 2× the cost.
+B2 remains cheaper per correct answer ($0.0273 against $0.0406), but the margin narrowed from
+2× to 1.5× as B3's accuracy rose. This is a **cost-quality trade rather than a free lunch**:
+16.6 points of accuracy for 1.5× the cost.
 
 **E2 latency is reported as `—` for every policy, deliberately.** An earlier sweep published
 this table:
@@ -511,25 +559,39 @@ this table:
 
 The `spent` column is the tell: three policies were served from the journal, so their "latency"
 was the time to hash a key and read a row. The column compared dictionary lookups against
-network round-trips. The harness now measures latency only over runs where no call was cached,
-and reports `e2_n` alongside the percentiles. A consequence is that any policy running *after*
-another in the same sweep inherits the shared router-call cache and becomes unmeasurable, so a
-clean E2 row requires a dedicated cold timing pass. That pass is v0.3 work.
+network round-trips. The harness now measures latency only over runs where no *agent-loop* call was cached, and
+reports `e2_n` alongside the percentiles.
 
-### 7.5 Verifier signals
+The first version of that rule counted the router call too, and B3 reported `0/30` across three
+consecutive sweeps while paying for every run — the router executes on the judge model with
+only the question, so it is identical across policies and gets journalled by whichever policy
+runs first. It is now excluded from the eligibility test; a cached router contributes a
+sub-millisecond cache read to the wall clock, which is a smaller distortion than having no
+latency data at all.
+
+**E2 is still unreported here** because the sweep that would have populated it was partly warm:
+only the 9 empty-horizon questions had changed prompts, so 21 of 30 runs per policy replayed.
+Measuring latency on the 9 that ran cold would report the hardest questions only. A dedicated
+cold timing pass with the journal bypassed is required, and is v0.3 work (~$1.80).
+
+### 7.6 Verifier signals
 
 ![Signals](figures/f5_signals.png)
 
 s1, s2 and s3 are near ceiling (0.93–1.00). **s4 retrieval relevance is the binding constraint
-on D3**, sitting at 0.47 for B2 and 0.54 for B3 — right at the pass threshold. D3 step-pass
-rates of ~50% are therefore mostly a statement about s4, not about the trajectories.
+on D3**, sitting at 0.53 for B2 and 0.65 for B3 — barely above the pass threshold. D3 step-pass
+rates of ~60% are therefore mostly a statement about s4, not about the trajectories.
+
+s4 rose from 0.47/0.54 after the §7.4 fix, which is itself evidence that a large part of it was
+never a judgement about relevance: it was the judge correctly scoring 0.0 for steps that
+returned nothing from an empty table.
 
 Two readings are open and this version cannot distinguish them: either the agents genuinely
 take many low-value retrieval steps, or the s4 rubric is miscalibrated. **This is precisely why
 Cohen's κ against human labels (§6.4) must be measured before any training budget is spent** —
 step filtering on an uncalibrated s4 would filter on noise.
 
-### 7.6 Behaviour
+### 7.7 Behaviour
 
 ![Tools](figures/f7_tools.png)
 ![Steps](figures/f8_steps.png)
@@ -553,12 +615,12 @@ because these questions need a *tagged fact*, not a passage.
 (B0) to 1.1% (B2) and 1.7% (B3). The environment, not the model, is doing that work. B1's 0% is
 not an achievement — it makes almost no numeric claims, so it has nothing to be unsupported.
 
-**The frontier model's advantage is concentrated in multi-fact questions.** B2 and B3 tie on
-lookup and cross-company and diverge on delta (28.6% vs 57.1%) and ratio (60% vs 80%). Whatever
-B3 is buying, it is period-tracking rather than retrieval or arithmetic.
+**The frontier model's advantage is concentrated in multi-fact questions.** B2 and B3 tie at
+100% on lookup and cross-company and diverge on delta (42.9% vs 85.7%) and ratio (40% vs 80%).
+Whatever B3 is buying, it is period-tracking rather than retrieval or arithmetic.
 
-**The confidence intervals are wide and overlap.** B2's 55.6–85.8% and B3's 70.3–94.7% overlap
-across 15 points. At n=30 the honest statement is that B3 is *probably* better; the test split
+**The confidence intervals are wide and overlap.** B2's 59.1–88.2% and B3's 78.7–98.2% overlap
+across 10 points. At n=30 the honest statement is that B3 is *probably* better; the test split
 at n=31 will not settle it either. Any claim that needs to be sharp needs the full 152.
 
 **The most reusable finding is methodological.** Every substantive correction in this stage
@@ -584,6 +646,9 @@ errors — nothing threw, and a passing test suite caught none of them.
    be at multi-year scale.
 6. **The router never selects P4.** Multi-hop questions are being answered on the SQL path.
    Whether that is correct routing or under-classification is untested.
+7. **The document corpus covers one year while facts cover seventeen.** §7.4 makes the
+   asymmetry explicit to the agent rather than removing it, so questions before 2025-08 are
+   still answerable only from XBRL. Ingesting historical filings would close it properly.
 
 ---
 
@@ -639,5 +704,5 @@ recall covers s1/s3 only. This stage is not closed.
 
 | version | stage | headline |
 |---|---|---|
-| **v0.2** | MVP2.2 | Environment, 152-question benchmark, B0–B3 with CIs. B2 73.3%, B3 86.7% on dev. Ceilings shown to be part of the measurement. H1 not tested. |
+| **v0.2** | MVP2.2 | Environment, 152-question benchmark, B0–B3 with CIs. B2 76.7%, B3 93.3% on dev. Ceilings shown to be part of the measurement. H1 not tested. |
 | v0.1 | MVP1 | Thin vertical slice: every component connected once, 20 questions, 1 company. Superseded — its routing claim was retracted after the `<finish>`-as-text bug was fixed. |

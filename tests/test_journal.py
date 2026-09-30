@@ -179,13 +179,18 @@ def test_replay_hit_costs_nothing(db: bool, monkeypatch: pytest.MonkeyPatch, mod
 
     settings.cache_clear()
     monkeypatch.setenv("FV_REPLAY", "true")
-    ledger = Ledger(max_usd=0.0001, max_steps=10)  # too small to afford a live call
+    # The ceiling must be able to afford the call. It used to be set below the call's price to
+    # prove the response came from cache, but a cached call now consumes list budget -- the
+    # ceiling is a property of the policy, so it cannot depend on whether the journal is warm.
+    # REPLAY mode is the stronger proof anyway: a miss raises rather than quietly going live.
+    ledger = Ledger(max_usd=1.0, max_steps=10)
 
     result = llm.call(model, messages, ledger=ledger)
     assert result.text == "cached answer"
     assert result.cached is True
     assert result.cost_usd == 0.0
-    assert ledger.usd == 0.0
+    assert ledger.usd == 0.0, "a journal hit is free"
+    assert ledger.list_usd > 0.0, "and still consumes the run's budget"
 
     pg.execute("DELETE FROM journal WHERE hash = %s", (hash_,))
     settings.cache_clear()

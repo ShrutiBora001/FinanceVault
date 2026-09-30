@@ -70,13 +70,15 @@ SELECT c.id, c.section, c.idx, c.text, f.accession, f.form, f.period_end,
 FROM fused
 JOIN chunks c ON c.id = fused.id
 JOIN filings f ON f.id = c.filing_id
-ORDER BY fused.score DESC
+-- c.id is the tie-break: reciprocal-rank fusion produces exact ties routinely, and an
+-- unordered tie makes the retrieved set differ between identical runs.
+ORDER BY fused.score DESC, c.id
 LIMIT %(candidates)s
 """
 
 
 def retrieve_handler(args: RetrieveInput, ctx: ToolContext) -> ToolResult:
-    from financevault.env import rerank  # noqa: PLC0415 - defers the torch import
+    from financevault.env import coverage, rerank  # noqa: PLC0415 - defers the torch import
     from financevault.env.chunk import embed_query  # noqa: PLC0415
 
     sql = RETRIEVE_SQL.format(
@@ -97,14 +99,21 @@ def retrieve_handler(args: RetrieveInput, ctx: ToolContext) -> ToolResult:
         params["section"] = args.section
 
     rows = ctx.as_of.check(pg.fetch_all(sql, params))
-    if not rows and args.section:
-        return ToolResult(
-            ok=False,
-            error=(
-                f"no passages in section {args.section!r}. Available sections: "
-                f"{', '.join(available_sections(ctx))}"
-            ),
-        )
+    if not rows:
+        # An empty result has two very different causes and the agent cannot tell them apart
+        # from silence. If no documents exist at this horizon at all, no rephrasing will help
+        # and saying so redirects the run to XBRL instead of spending its budget here.
+        cover = coverage.at(ctx.as_of, cik=ctx.cik)
+        if cover.documents_empty:
+            return ToolResult(ok=False, error=cover.advice())
+        if args.section:
+            return ToolResult(
+                ok=False,
+                error=(
+                    f"no passages in section {args.section!r}. Available sections: "
+                    f"{', '.join(available_sections(ctx))}"
+                ),
+            )
 
     candidates = [
         {
@@ -130,7 +139,9 @@ def available_sections(ctx: ToolContext, limit: int = 8) -> list[str]:
     rows = pg.fetch_all(
         """
         SELECT DISTINCT c.section FROM chunks c JOIN filings f ON f.id = c.filing_id
-        WHERE f.cik = %(cik)s AND c.section IS NOT NULL LIMIT %(limit)s
+        WHERE f.cik = %(cik)s AND c.section IS NOT NULL
+        ORDER BY c.section
+        LIMIT %(limit)s
         """,
         {"cik": ctx.cik, "limit": limit},
     )
@@ -175,7 +186,7 @@ WHERE cik = %(cik)s AND tag = %(tag)s AND unit = %(unit)s
   AND {asof}
   {period_filter}
   {fp_filter}
-ORDER BY period_end DESC, accepted_at DESC
+ORDER BY period_end DESC, accepted_at DESC, accession
 LIMIT 20
 """
 
@@ -243,7 +254,10 @@ def _similar_tags(ctx: ToolContext, tag: str, limit: int = 5) -> list[str]:
             SELECT DISTINCT tag FROM xbrl_facts
             WHERE cik = %(cik)s AND tag %% %(tag)s
         ) t
-        ORDER BY similarity(t.tag, %(tag)s) DESC
+        -- tag is the tie-break. Without it, equally-similar tags come back in whatever
+        -- order the planner chose, the error message differs between runs, and the next
+        -- prompt differs -- which changes the journal key and breaks replay determinism.
+        ORDER BY similarity(t.tag, %(tag)s) DESC, t.tag
         LIMIT %(limit)s
         """,
         {"cik": ctx.cik, "tag": tag, "limit": limit},

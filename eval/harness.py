@@ -21,14 +21,39 @@ from financevault.env.asof import AsOf
 from financevault.runtime.budget import Ledger
 from financevault.store import pg
 
-SPLIT = Path("eval/splits/mvp_20.jsonl")
+SPLIT = Path("eval/splits/mvp_150.jsonl")
 RESULTS = Path("eval/results")
 
 
-def load_split(path: Path = SPLIT) -> list[dict]:
+def load_split(path: Path = SPLIT, subset: str | None = None) -> list[dict]:
+    """Load the frozen split, optionally restricted to train/dev/test.
+
+    `subset` defaults to everything. Development should read `dev` and leave `test` alone:
+    a test set you have iterated against is a validation set wearing the wrong label.
+    """
     if not path.exists():
         raise FileNotFoundError(f"{path} missing — run `python scripts/make_split.py`")
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    if subset:
+        rows = [r for r in rows if r.get("split") == subset]
+    return rows
+
+
+def wilson_interval(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """A 95% confidence interval for a proportion, by the Wilson score method.
+
+    Wilson rather than the normal approximation because the normal one is badly wrong at the
+    edges — with 31 questions and a policy scoring 100%, it gives the interval [1.0, 1.0],
+    which asserts certainty from a sample that cannot support it. Wilson keeps a sensible
+    width at 0 and 1, which is exactly where a benchmark's headline numbers sit.
+    """
+    if n == 0:
+        return (0.0, 0.0)
+    p = successes / n
+    denominator = 1 + z**2 / n
+    centre = (p + z**2 / (2 * n)) / denominator
+    spread = z * ((p * (1 - p) / n + z**2 / (4 * n**2)) ** 0.5) / denominator
+    return (max(0.0, centre - spread), min(1.0, centre + spread))
 
 
 @dataclass(slots=True)
@@ -44,6 +69,11 @@ class Outcome:
     latency_ms: int
     n_steps: int
     outcome: str
+    n_calls: int = 0
+    cached_calls: int = 0
+    # The agent loop alone, excluding the shared router preamble. See `timed_cold`.
+    agent_calls: int = 0
+    cached_agent_calls: int = 0
     step_scores: list[dict[str, float]] = field(default_factory=list)
     unsupported_claims: float = 0.0
 
@@ -54,6 +84,24 @@ class Outcome:
             for s in self.step_scores
             if all(s.get(k, 1.0) >= 0.5 for k in ("s1", "s2", "s3", "s4"))
         )
+
+    @property
+    def timed_cold(self) -> bool:
+        """Whether this run's wall time measures the policy rather than the journal.
+
+        A run served entirely from cache returns in the time it takes to hash a key and read a
+        row. That is a real number about the harness and a meaningless one about the policy, so
+        it must not enter E2.
+
+        Judged on the **agent loop only**. The router call runs on the judge model with just
+        the question, so it is identical across policies and is journalled by whichever policy
+        runs first in a sweep. Counting it made every later policy permanently ineligible — B3
+        reported 0/30 across three consecutive sweeps while spending real money on every run.
+        A cached router contributes a sub-millisecond cache read to the wall clock, so
+        excluding it from the test biases E2 downward by less than the rounding on a single
+        API call, against the alternative of having no latency data at all.
+        """
+        return self.agent_calls > 0 and self.cached_agent_calls == 0
 
 
 def _percentile(values: list[float], pct: float) -> float:
@@ -92,6 +140,9 @@ def run_policy(name: str, questions: list[dict], *, verify_steps: bool = True) -
             )
 
         terminal = verdicts[-1] if verdicts else None
+        entries = run.ledger.entries if run.ledger else []
+        # `step-*` is the agent loop; `router` is the shared preamble. See `Outcome.timed_cold`.
+        agent_entries = [e for e in entries if str(e.get("label", "")).startswith("step-")]
         outcomes.append(
             Outcome(
                 question_id=q["id"],
@@ -105,6 +156,10 @@ def run_policy(name: str, questions: list[dict], *, verify_steps: bool = True) -
                 latency_ms=latency_ms,
                 n_steps=len(run.steps),
                 outcome=run.outcome,
+                n_calls=len(entries),
+                cached_calls=sum(1 for e in entries if e["cached"]),
+                agent_calls=len(agent_entries),
+                cached_agent_calls=sum(1 for e in agent_entries if e["cached"]),
                 step_scores=[v.scores() for v in verdicts],
                 unsupported_claims=(1.0 - terminal.signals["s3"].score if terminal else 1.0),
             )
@@ -117,7 +172,14 @@ def summarise(name: str, outcomes: list[Outcome]) -> dict[str, Any]:
     correct = [o for o in outcomes if o.correct]
     total_steps = sum(len(o.step_scores) for o in outcomes)
     passed_steps = sum(o.steps_passed for o in outcomes)
-    latencies = [float(o.latency_ms) for o in outcomes]
+    # E2 is measured only on runs that actually called the model. Mixing cached runs into the
+    # distribution does not add noise, it changes what is being measured: a journal hit is a
+    # hash and a row read, so a fully-cached sweep reports single-digit milliseconds for a
+    # policy that takes seconds. The first sweep compared 4-73ms cache lookups for three
+    # policies against 17,333ms of live API calls for the fourth and presented it as a latency
+    # comparison between policies.
+    timed = [o for o in outcomes if o.timed_cold]
+    latencies = [float(o.latency_ms) for o in timed]
     spend = sum(o.cost_usd for o in outcomes)
     list_spend = sum(o.list_usd for o in outcomes)
 
@@ -126,6 +188,7 @@ def summarise(name: str, outcomes: list[Outcome]) -> dict[str, Any]:
         "n": len(outcomes),
         # D1: did it get the number right?
         "d1_accuracy": round(len(correct) / n, 4),
+        "d1_ci95": [round(b, 4) for b in wilson_interval(len(correct), len(outcomes))],
         # D2: share of numeric claims not traceable to retrieved evidence.
         "d2_unsupported_claim_rate": round(sum(o.unsupported_claims for o in outcomes) / n, 4),
         # D3: the share of *steps* that verify, which is what localises a gain.
@@ -134,8 +197,12 @@ def summarise(name: str, outcomes: list[Outcome]) -> dict[str, Any]:
         # List cost, not actual: E1 describes the policy, so it must not collapse to
         # zero merely because a previous sweep already journalled these calls.
         "e1_cost_per_correct": round(list_spend / len(correct), 6) if correct else None,
-        "e2_p50_latency_ms": int(_percentile(latencies, 50)),
-        "e2_p95_latency_ms": int(_percentile(latencies, 95)),
+        # None rather than 0 when nothing ran cold: a replayed sweep has no latency to report,
+        # and saying so is the only honest option. `e2_n` travels with the figures so a reader
+        # can see how many runs they rest on.
+        "e2_p50_latency_ms": int(_percentile(latencies, 50)) if timed else None,
+        "e2_p95_latency_ms": int(_percentile(latencies, 95)) if timed else None,
+        "e2_n": len(timed),
         "total_list_usd": round(list_spend, 6),
         "total_spent_usd": round(spend, 6),
         "mean_steps": round(sum(o.n_steps for o in outcomes) / n, 2),
@@ -168,13 +235,15 @@ def main() -> int:
     from financevault.config import settings
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--policies", default="b1-rag,b2-tools")
+    parser.add_argument("--policies", default="b0-no-tools,b1-rag,b2-tools,b3-frontier")
+    parser.add_argument("--subset", default="dev", help="train | dev | test | all")
     parser.add_argument("--limit", type=int, default=0, help="first N questions (0 = all)")
     parser.add_argument("--out", default=None)
     args = parser.parse_args()
 
     console = Console()
-    questions = load_split()
+    subset = None if args.subset == "all" else args.subset
+    questions = load_split(subset=subset)
     if args.limit:
         questions = questions[: args.limit]
 
@@ -184,7 +253,7 @@ def main() -> int:
 
     replay = settings().replay
     console.print(
-        f"[bold]{len(questions)}[/bold] questions | "
+        f"[bold]{len(questions)}[/bold] questions ({args.subset}) | "
         f"analyst=[cyan]{settings().analyst_model}[/cyan] | "
         f"judge=[cyan]{settings().judge_model}[/cyan] | "
         + ("[green]REPLAY[/green]" if replay else "[yellow]LIVE[/yellow]")
@@ -207,25 +276,36 @@ def main() -> int:
     table = Table(title="MVP1 baselines", header_style="bold")
     table.add_column("policy")
     table.add_column("D1 acc", justify="right")
+    table.add_column("95% CI", justify="right")
     table.add_column("D2 unsup", justify="right")
     table.add_column("D3 step", justify="right")
     table.add_column("E1 $/correct", justify="right")
     table.add_column("E2 p95 ms", justify="right")
+    table.add_column("E2 n", justify="right")
     table.add_column("steps", justify="right")
     table.add_column("list $", justify="right")
     for s in summaries:
         table.add_row(
             s["policy"],
             f"{s['d1_accuracy']:.0%}",
+            f"{s['d1_ci95'][0]:.0%}-{s['d1_ci95'][1]:.0%}",
             f"{s['d2_unsupported_claim_rate']:.0%}",
             f"{s['d3_step_pass_rate']:.0%}",
             "—" if s["e1_cost_per_correct"] is None else f"${s['e1_cost_per_correct']:.4f}",
-            f"{s['e2_p95_latency_ms']:,}",
+            "—" if s["e2_p95_latency_ms"] is None else f"{s['e2_p95_latency_ms']:,}",
+            f"{s['e2_n']}/{s['n']}",
             f"{s['mean_steps']}",
             f"${s['total_list_usd']:.4f}",
         )
     console.print()
     console.print(table)
+
+    if any(s["e2_n"] < s["n"] for s in summaries):
+        console.print(
+            "\n[yellow]E2 note[/yellow] latency covers only runs that called the model. "
+            "Cached runs measure the journal, not the policy, and are excluded — "
+            "a policy showing [bold]0/n[/bold] replayed entirely and has no latency to report."
+        )
 
     spent = round(float(after.get("usd", 0)) - float(before.get("usd", 0)), 6)
     console.print(
@@ -234,7 +314,8 @@ def main() -> int:
     )
 
     RESULTS.mkdir(parents=True, exist_ok=True)
-    out = Path(args.out) if args.out else RESULTS / ("mvp1_replay.json" if replay else "mvp1.json")
+    default_name = f"mvp2.2_{args.subset}{'_replay' if replay else ''}.json"
+    out = Path(args.out) if args.out else RESULTS / default_name
     out.write_text(
         json.dumps(
             {
@@ -242,6 +323,7 @@ def main() -> int:
                 "analyst_model": settings().analyst_model,
                 "judge_model": settings().judge_model,
                 "n_questions": len(questions),
+                "subset": args.subset,
                 "journal_spend_usd": spent,
                 "policies": summaries,
             },

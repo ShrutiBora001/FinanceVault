@@ -83,20 +83,37 @@ class Ledger:
 
     @property
     def remaining_usd(self) -> float:
-        return max(0.0, self.max_usd - self.usd)
+        """Headroom against the ceiling, which is measured in list cost -- see `check`."""
+        return max(0.0, self.max_usd - self.list_usd)
 
     def check(self) -> None:
-        """Raise if any ceiling is already breached. Called before starting a step."""
-        if self.usd > self.max_usd:
-            raise BudgetExceeded("usd", self.usd, self.max_usd)
+        """Raise if any ceiling is already breached. Called before starting a step.
+
+        The dollar ceiling is enforced against `list_usd`, not `usd`. A budget is a property
+        of the *policy*: "this run may spend five cents" has to mean the same thing whether or
+        not a previous sweep already journalled these calls. Enforcing against actual spend
+        made the ceiling vanish on replay -- a journal hit costs nothing, so a warm run sailed
+        past the limit a cold run had aborted on, and the two produced different trajectories
+        for the same question. That is the determinism failure that breaks replay, arriving
+        through the budget instead of through an unordered SELECT.
+
+        It also silently moved a metric: on the MVP2.2 dev split B3 gained three accuracy
+        points between two identical sweeps, purely because the second one was free.
+        """
+        if self.list_usd > self.max_usd:
+            raise BudgetExceeded("usd", self.list_usd, self.max_usd)
         if self.steps > self.max_steps:
             raise BudgetExceeded("steps", self.steps, self.max_steps)
         if self.elapsed > self.max_seconds:
             raise BudgetExceeded("seconds", self.elapsed, self.max_seconds)
 
     def would_exceed(self, usd: float) -> bool:
-        """Whether a call of the given cost would breach the dollar ceiling."""
-        return self.usd + usd > self.max_usd
+        """Whether a call of the given list cost would breach the dollar ceiling.
+
+        Takes list cost, to match `check`. Passing actual cost here would let a warm run
+        admit a call a cold run refused.
+        """
+        return self.list_usd + usd > self.max_usd
 
     def charge(
         self,

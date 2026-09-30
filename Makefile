@@ -21,7 +21,7 @@ RUFF   := $(VENV)/bin/ruff
 # decides the target is up to date, and silently does nothing -- which looks exactly like a
 # successful no-op run.
 .PHONY: help venv venv-embed up down logs psql redis-cli migrate reset test lint fmt clean \
-        split eval replay determinism leak calibrate rollout sft mvp
+        split eval figures replay determinism leak calibrate rollout sft mvp
 
 help:  ## show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -65,6 +65,9 @@ ingest:  ## fetch filings, chunks, XBRL facts and prices (TICKERS=AAPL by defaul
 
 split:  ## regenerate the frozen eval split (changes the benchmark; needs --force)
 	$(PY) scripts/make_split.py
+
+figures:  ## regenerate every figure in the report from the results file
+	$(PY) -m scripts.make_figures
 
 eval:  ## run every policy over the frozen split, live
 	$(PY) -m eval.harness $(ARGS)

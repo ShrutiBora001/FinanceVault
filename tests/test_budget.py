@@ -58,11 +58,48 @@ def test_would_exceed_predicts_without_charging() -> None:
 
 def test_cached_calls_cost_nothing_but_still_count_tokens() -> None:
     """The replay guarantee, at ledger level: journal hits are free and say so."""
-    ledger = Ledger(max_usd=0.001, max_steps=10)
+    ledger = Ledger(max_usd=100.0, max_steps=10)
     ledger.charge("claude-sonnet-5", 1_000_000, 1_000_000, cached=True)
     assert ledger.usd == 0.0
     assert ledger.tokens_in == 1_000_000
     assert ledger.summary()["cache_hit_rate"] == 1.0
+
+
+def test_a_cached_call_still_counts_against_the_dollar_ceiling() -> None:
+    """Regression: enforcing on actual spend made the ceiling vanish on replay.
+
+    A journal hit costs nothing, so a warm run used to sail past a limit the cold run had
+    aborted on, and the two produced different trajectories for the same question. The budget
+    is a property of the policy, so it is enforced on list cost.
+    """
+    ledger = Ledger(max_usd=0.001, max_steps=10)
+    with pytest.raises(BudgetExceeded):
+        ledger.charge("claude-sonnet-5", 1_000_000, 1_000_000, cached=True)
+    assert ledger.usd == 0.0, "it must still be recorded as free"
+    assert ledger.list_usd > 0.001
+
+
+def test_a_run_aborts_at_the_same_point_cold_or_warm() -> None:
+    """The property that matters: cache state must not change the trajectory."""
+
+    def spend(cached: bool) -> int:
+        ledger = Ledger(max_usd=0.05, max_steps=100)
+        calls = 0
+        while True:
+            try:
+                ledger.charge("claude-sonnet-5", 5_000, 500, cached=cached)
+            except BudgetExceeded:
+                return calls
+            calls += 1
+
+    assert spend(cached=True) == spend(cached=False)
+
+
+def test_would_exceed_uses_list_cost_so_it_agrees_with_the_ceiling() -> None:
+    ledger = Ledger(max_usd=0.10, max_steps=10)
+    ledger.charge("claude-haiku-4-5-20251001", 50_000, 5_000, cached=True)
+    assert ledger.usd == 0.0
+    assert ledger.would_exceed(0.05) is True, "a free call still consumed the budget"
 
 
 def test_summary_reports_hit_rate() -> None:

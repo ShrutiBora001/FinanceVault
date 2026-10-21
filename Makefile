@@ -21,7 +21,8 @@ RUFF   := $(VENV)/bin/ruff
 # decides the target is up to date, and silently does nothing -- which looks exactly like a
 # successful no-op run.
 .PHONY: help venv venv-embed up down logs psql redis-cli migrate reset test lint fmt clean \
-        split eval figures replay determinism leak calibrate rollout sft mvp
+        split eval figures replay determinism gate leak calibrate rollout sft mvp \
+        serve catalog image dump restore
 
 help:  ## show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -75,6 +76,9 @@ eval:  ## run every policy over the frozen split, live
 replay:  ## re-run the same sweep from the journal; must cost $0.00
 	FV_REPLAY=true $(PY) -m eval.harness --out eval/results/mvp1_replay.json $(ARGS)
 
+gate:  ## regression gate: replay api/catalog.json, fail on any change ($0, no model)
+	$(PY) -m scripts.eval_gate $(ARGS)
+
 determinism:  ## F1/F2: compare the live and replayed metric tables
 	$(PY) scripts/determinism.py
 
@@ -92,6 +96,25 @@ sft:  ## LoRA smoke run: proves export -> train -> adapter loads. Not an experim
 
 mvp:  ## the whole MVP1 chain, printing every exit metric
 	$(MAKE) leak && $(MAKE) calibrate && $(MAKE) eval && $(MAKE) replay && $(MAKE) determinism && $(MAKE) rollout && $(MAKE) sft
+
+# ---------------------------------------------------------------- serving
+
+serve:  ## run the API and demo page on :8000, reloading on change
+	$(VENV)/bin/uvicorn financevault.api.app:app --reload --port $(or $(PORT),8000)
+
+catalog:  ## list the eval questions that replay from the journal (the demo's question list)
+	$(PY) -m scripts.demo_catalog $(ARGS)
+
+image:  ## build the deployable container image
+	$(DOCKER) build -t financevault:latest .
+
+dump:  ## write the database to data/financevault.dump, for loading into a hosted Postgres
+	$(COMPOSE) exec -T postgres pg_dump -U financevault -d financevault -Fc --no-owner > data/financevault.dump
+	@ls -lh data/financevault.dump
+
+restore:  ## load data/financevault.dump into DSN=postgresql://... (a hosted Postgres with pgvector)
+	@test -n "$(DSN)" || { echo "usage: make restore DSN=postgresql://user:pass@host/db?sslmode=require"; exit 1; }
+	$(COMPOSE) exec -T postgres pg_restore --no-owner --no-acl --clean --if-exists -d "$(DSN)" < data/financevault.dump
 
 reset:  ## DESTRUCTIVE: drop the postgres volume and re-migrate from empty
 	$(COMPOSE) down -v

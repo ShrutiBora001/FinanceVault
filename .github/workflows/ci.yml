@@ -1,0 +1,166 @@
+# CI: two jobs, cheapest first.
+#
+# `unit` runs lint and the suite against a migrated but empty database. Corpus-dependent tests
+# skip there, by design, so this job is fast feedback rather than the gate.
+#
+# `integration` is the gate. It ingests the real 10-company corpus from SEC EDGAR, then runs the
+# whole suite with FV_FORBID_SKIPS=1, so the tests guarding the point-in-time guarantee and
+# replay determinism cannot pass by being skipped. It finishes with the A1 lookahead-leak
+# benchmark, which exits non-zero on any leak at all.
+#
+# Neither job calls a model: no API key is configured, and the tests that exercise the journal
+# seed their own entries.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FV_PG_DSN: postgresql://financevault:financevault@localhost:5432/financevault
+  FV_ANTHROPIC_API_KEY: ""
+  FV_REPLAY: "true"
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: financevault
+          POSTGRES_PASSWORD: financevault
+          POSTGRES_DB: financevault
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U financevault -d financevault"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install
+        run: |
+          uv venv --python 3.12 .venv
+          uv pip install --python .venv/bin/python -e ".[dev]"
+      - name: Lint
+        run: make lint
+      - name: Migrate
+        run: make migrate
+      - name: Test (corpus-dependent tests skip here)
+        run: .venv/bin/pytest -q -rs
+
+  integration:
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: financevault
+          POSTGRES_PASSWORD: financevault
+          POSTGRES_DB: financevault
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U financevault -d financevault"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      # SEC requires a descriptive User-Agent with contact details on every request.
+      FV_SEC_USER_AGENT: FinanceVault CI (${{ github.repository }}; sb9880@nyu.edu)
+      HF_HOME: ${{ github.workspace }}/.hf-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Cache embedding and reranker models
+        uses: actions/cache@v4
+        with:
+          path: .hf-cache
+          key: hf-bge-small-en-v1.5-msmarco-minilm-l6-v2
+      - name: Install (CPU torch)
+        run: |
+          uv venv --python 3.12 .venv
+          uv pip install --python .venv/bin/python --torch-backend cpu -e ".[dev,embed]"
+      - name: Migrate
+        run: make migrate
+      - name: Ingest the 10-company corpus from SEC EDGAR
+        # --accepted-before pins the documents to the v0.2 corpus (accepted 2025-08-04 to
+        # 2026-08-03); without it "the latest four filings" drifts every time a company files.
+        # Prices come from yfinance, which blocks cloud runners; no test reads them.
+        run: >-
+          .venv/bin/python scripts/ingest.py --tickers all --skip-prices
+          --accepted-before 2026-08-04
+      - name: Test, with skips forbidden
+        run: FV_FORBID_SKIPS=1 .venv/bin/pytest -q
+      - name: A1 lookahead leak rate must be exactly zero
+        run: .venv/bin/python -m bench.pit_leak
+
+  # The regression gate: replay every question/policy pair in api/catalog.json and fail on any
+  # change (scripts/eval_gate.py). It restores a database dump (`make dump`) instead of
+  # ingesting, because tool output carries chunk ids and a fresh ingest can number them
+  # differently, which changes every prompt and turns the whole replay into journal misses.
+  # The dump is fetched from the FV_CI_FIXTURE_URL secret (any private URL you choose, e.g. a
+  # presigned S3 link); the job skips with a notice until it is set.
+  eval-gate:
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: financevault
+          POSTGRES_PASSWORD: financevault
+          POSTGRES_DB: financevault
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U financevault -d financevault"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      HF_HOME: ${{ github.workspace }}/.hf-cache
+      FIXTURE_URL: ${{ secrets.FV_CI_FIXTURE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the database fixture
+        id: fixture
+        run: |
+          if [ -z "$FIXTURE_URL" ]; then
+            echo "::notice::FV_CI_FIXTURE_URL is not set; eval gate skipped"
+          else
+            curl -fsSL "$FIXTURE_URL" -o data/financevault.dump
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: astral-sh/setup-uv@v6
+        if: steps.fixture.outputs.present == 'true'
+        with:
+          enable-cache: true
+      - uses: actions/cache@v4
+        if: steps.fixture.outputs.present == 'true'
+        with:
+          path: .hf-cache
+          key: hf-bge-small-en-v1.5-msmarco-minilm-l6-v2
+      - name: Install (CPU torch)
+        if: steps.fixture.outputs.present == 'true'
+        run: |
+          uv venv --python 3.12 .venv
+          uv pip install --python .venv/bin/python --torch-backend cpu -e ".[dev,embed]"
+      - name: Restore corpus and journal
+        if: steps.fixture.outputs.present == 'true'
+        # pg_restore inside the service container: the runner's client is older than pg17.
+        run: >-
+          docker exec -i ${{ job.services.postgres.id }}
+          pg_restore -U financevault -d financevault --no-owner --no-acl < data/financevault.dump
+      - name: Replay the catalog; any regression or drift fails
+        if: steps.fixture.outputs.present == 'true'
+        run: .venv/bin/python -m scripts.eval_gate

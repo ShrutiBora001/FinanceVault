@@ -41,7 +41,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-financevault = ["store/*.sql"]
+financevault = ["store/*.sql", "api/static/*", "api/catalog.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

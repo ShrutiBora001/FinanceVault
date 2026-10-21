@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FinanceVault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a filing-desk workbench. Question and catalog on the left, the audited trajectory on the right. */
+:root {
+  --bg: #f5f6f4;
+  --panel: #ffffff;
+  --ink: #1b2120;
+  --muted: #5c6764;
+  --rule: #d9dedb;
+  --accent: #1d5c63;
+  --accent-soft: #e2eeee;
+  --pass: #1f7a46;
+  --pass-soft: #e3f2e8;
+  --fail: #b3332b;
+  --fail-soft: #f8e5e3;
+  --warn: #8a6100;
+  --warn-soft: #f7efd9;
+  --na: #8a9491;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121615; --panel: #1a201f; --ink: #e4e9e7; --muted: #95a19e; --rule: #2c3533;
+    --accent: #6fc0c6; --accent-soft: #1c3335; --pass: #63c48b; --pass-soft: #17301f;
+    --fail: #ef7b72; --fail-soft: #3a1d1a; --warn: #e0b54f; --warn-soft: #332a12; --na: #6c7774;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121615; --panel: #1a201f; --ink: #e4e9e7; --muted: #95a19e; --rule: #2c3533;
+  --accent: #6fc0c6; --accent-soft: #1c3335; --pass: #63c48b; --pass-soft: #17301f;
+  --fail: #ef7b72; --fail-soft: #3a1d1a; --warn: #e0b54f; --warn-soft: #332a12; --na: #6c7774;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 20px 48px; display: grid; gap: 20px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 20px; border-bottom: 1px solid var(--rule); padding-bottom: 14px; }
+h1 { font: 600 26px/1.1 var(--display); letter-spacing: .01em; margin: 0; }
+.tagline { color: var(--muted); margin: 0; flex: 1 1 320px; }
+nav { display: flex; gap: 4px; }
+nav button { font: 500 14px var(--body); background: none; border: 1px solid transparent; color: var(--muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+nav button[aria-selected="true"] { color: var(--ink); border-color: var(--rule); background: var(--panel); }
+h2 { font: 600 17px/1.2 var(--display); letter-spacing: .02em; margin: 0; text-wrap: balance; }
+.label { font: 500 11px var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+form { display: grid; gap: 12px; }
+.field { display: grid; gap: 4px; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; }
+.row > .field { flex: 1 1 120px; min-width: 0; }
+input, select, textarea { font: 14px var(--body); color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; width: 100%; }
+textarea { resize: vertical; min-height: 64px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.btn { font: 600 14px var(--body); background: var(--accent); color: var(--panel); border: 0; border-radius: 6px; padding: 9px 14px; cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: progress; }
+.btn.ghost { background: none; color: var(--accent); border: 1px solid var(--accent); }
+.hint { color: var(--muted); font-size: 13px; margin: 0; }
+.catalog { display: grid; gap: 2px; max-height: 420px; overflow-y: auto; margin: 0 -6px; }
+.catalog button { text-align: left; background: none; border: 0; border-radius: 6px; padding: 7px 6px; color: var(--ink); font: 14px/1.35 var(--body); cursor: pointer; display: grid; gap: 2px; }
+.catalog button:hover { background: var(--accent-soft); }
+.catalog .meta { font: 12px var(--mono); color: var(--muted); }
+.chip { display: inline-flex; align-items: center; gap: 4px; font: 500 12px var(--mono); padding: 1px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.chip.pass { background: var(--pass-soft); color: var(--pass); }
+.chip.fail { background: var(--fail-soft); color: var(--fail); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.na { background: none; color: var(--na); border: 1px dashed var(--rule); }
+.empty { color: var(--muted); padding: 32px 8px; text-align: center; }
+.runhead { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.runhead .q { font: 600 18px/1.3 var(--display); flex: 1 1 100%; }
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.step { border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px; min-width: 0; animation: in .25s ease-out; }
+@keyframes in { from { transform: translateY(4px); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .step { animation: none; } }
+.step.failed { border-color: var(--fail); }
+.stephead { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.idx { font: 500 12px var(--mono); color: var(--muted); }
+.tool { font: 500 14px var(--mono); }
+.thought { color: var(--muted); font-size: 14px; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.signals { display: flex; flex-wrap: wrap; gap: 6px; }
+details summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+pre { font: 12px/1.45 var(--mono); background: var(--bg); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; margin: 6px 0 0; overflow-x: auto; max-height: 320px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.answer { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 14px; display: grid; gap: 10px; }
+.answer .text { font-size: 16px; margin: 0; overflow-wrap: anywhere; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 0; }
+.facts div { display: grid; gap: 2px; }
+.facts dt { font: 500 11px var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.facts dd { margin: 0; font: 500 14px var(--mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.error { border: 1px solid var(--fail); background: var(--fail-soft); color: var(--ink); border-radius: 8px; padding: 12px 14px; margin: 0; }
+.seed { display: grid; gap: 10px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.compare > div { border: 1px solid var(--rule); border-radius: 6px; padding: 10px; display: grid; gap: 6px; min-width: 0; background: var(--panel); }
+.reason { font-size: 13px; color: var(--muted); margin: 0; overflow-wrap: anywhere; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th { font: 500 11px var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.figs figure { margin: 0; background: #fff; border: 1px solid var(--rule); border-radius: 8px; padding: 8px; }
+.figs img { display: block; width: 100%; height: auto; }
+.figs figcaption { font-size: 13px; color: #5c6764; padding: 6px 4px 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.legend b { font: 500 12px var(--mono); color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>FinanceVault</h1>
+    <p class="tagline">An agent answers questions from SEC filings as they stood on a chosen date. Every step it takes is checked.</p>
+    <nav role="tablist">
+      <button id="tab-ask" role="tab" aria-selected="true" data-view="ask">Ask</button>
+      <button id="tab-bench" role="tab" aria-selected="false" data-view="bench">Benchmarks</button>
+    </nav>
+  </header>
+
+  <section id="view-ask" class="grid">
+    <div class="panel">
+      <h2>Question</h2>
+      <form id="ask">
+        <div class="field">
+          <label class="label" for="q">Question</label>
+          <textarea id="q" required minlength="3">What was AAPL's net income in fiscal year 2025?</textarea>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label class="label" for="asof">As of</label>
+            <input id="asof" type="date" required value="2025-11-01">
+          </div>
+          <div class="field">
+            <label class="label" for="ticker">Ticker</label>
+            <input id="ticker" value="AAPL" maxlength="10">
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label class="label" for="policy">Agent</label>
+            <select id="policy"></select>
+          </div>
+          <div class="field">
+            <label class="label" for="mode">Mode</label>
+            <select id="mode">
+              <option value="replay">Replay ($0.00)</option>
+              <option value="live">Live (needs key)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" id="keyfield" hidden>
+          <label class="label" for="key">API key</label>
+          <input id="key" type="password" autocomplete="off" placeholder="Bearer key for live runs">
+        </div>
+        <input type="hidden" id="cik">
+        <button class="btn" id="go" type="submit">Run</button>
+        <p class="hint" id="modehint">Replay answers from the journal of recorded model calls. It costs nothing and only works for questions that were run before.</p>
+      </form>
+      <div class="field">
+        <span class="label">Recorded questions</span>
+        <input id="filter" type="search" placeholder="Filter by company or wording">
+        <div class="catalog" id="catalog"><p class="hint">Loading…</p></div>
+      </div>
+    </div>
+
+    <div class="panel" id="run" aria-live="polite">
+      <div class="empty" id="runempty">
+        <h2>Trajectory</h2>
+        <p>Pick a recorded question, or keep the example, and press Run. Each tool call appears here as it happens, then the verifier scores it.</p>
+        <div class="legend" style="justify-content:center">
+          <span><b>s1</b> tool call valid</span><span><b>s2</b> citations support answer</span><span><b>s3</b> figures trace to evidence</span><span><b>s4</b> retrieval relevant</span><span><b>s5</b> matches gold answer</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-bench" hidden>
+    <div class="panel">
+      <h2>Benchmark results</h2>
+      <p class="hint">Committed results from <code>eval/results/</code>. Accuracy is the share of questions whose final number is within 0.5% of the gold value.</p>
+      <div class="tablewrap" id="bench-table"></div>
+      <h2>Point-in-time leak rate</h2>
+      <p class="hint" id="leak-note"></p>
+      <div class="tablewrap" id="leak-table"></div>
+      <h2>Seeded-error recall</h2>
+      <p class="hint">Known errors injected into correct trajectories. Recall is the share the verifier catches, per error class.</p>
+      <div class="tablewrap" id="seed-table"></div>
+      <h2>Figures</h2>
+      <div class="figs" id="figs"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+  }
+  for (const k of kids) if (k != null) n.append(k);
+  return n;
+};
+const usd = (x) => x == null ? "—" : "$" + Number(x).toFixed(4);
+const big = (x) => {
+  if (x == null) return "—";
+  const a = Math.abs(x);
+  if (a >= 1e9) return (x / 1e9).toLocaleString(undefined, { maximumFractionDigits: 3 }) + " billion";
+  if (a >= 1e6) return (x / 1e6).toLocaleString(undefined, { maximumFractionDigits: 3 }) + " million";
+  return Number(x).toLocaleString(undefined, { maximumFractionDigits: 4 });
+};
+const SIGNAL_NAMES = { s1: "tool call valid", s2: "citations support answer", s3: "figures trace to evidence", s4: "retrieval relevant", s5: "matches gold answer" };
+
+let CONFIG = null, CATALOG = [], current = null;
+
+// ---------------------------------------------------------------- tabs
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach((x) => x.setAttribute("aria-selected", x === b));
+  $("#view-ask").hidden = b.dataset.view !== "ask";
+  $("#view-bench").hidden = b.dataset.view !== "bench";
+  if (b.dataset.view === "bench") loadBench();
+}));
+
+// ---------------------------------------------------------------- setup
+async function init() {
+  CONFIG = await (await fetch("/v1/config")).json();
+  const sel = $("#policy");
+  for (const [p, model] of Object.entries(CONFIG.policies)) sel.append(el("option", { value: p, text: `${p} · ${model}` }));
+  if (!CONFIG.live_available) {
+    $("#mode option[value=live]").disabled = true;
+    $("#mode option[value=live]").textContent = "Live (off on this server)";
+  }
+  const cat = await (await fetch("/v1/catalog")).json();
+  CATALOG = cat.questions;
+  renderCatalog();
+}
+$("#mode").addEventListener("change", () => {
+  const live = $("#mode").value === "live";
+  $("#keyfield").hidden = !live;
+  $("#modehint").textContent = live
+    ? `Live calls the model and spends real money, up to ${usd(CONFIG.max_usd)} per run. $${CONFIG.live_remaining_usd.toFixed(2)} of today's server budget is left.`
+    : "Replay answers from the journal of recorded model calls. It costs nothing and only works for questions that were run before.";
+});
+$("#filter").addEventListener("input", renderCatalog);
+
+function renderCatalog() {
+  const box = $("#catalog"); box.replaceChildren();
+  const f = $("#filter").value.toLowerCase();
+  const rows = CATALOG.filter((q) => !f || q.question.toLowerCase().includes(f) || (q.ticker || "").toLowerCase().includes(f));
+  if (!CATALOG.length) { box.append(el("p", { class: "hint", text: "No catalog on this server yet. Build it with python -m scripts.demo_catalog." })); return; }
+  if (!rows.length) { box.append(el("p", { class: "hint", text: "Nothing matches that filter." })); return; }
+  for (const q of rows) {
+    const pols = Object.keys(q.policies).join(", ");
+    const b = el("button", { type: "button" }, el("span", { text: q.question }), el("span", { class: "meta", text: `${q.ticker} · as of ${q.as_of} · ${q.archetype} · ${pols}` }));
+    b.addEventListener("click", () => {
+      $("#q").value = q.question; $("#asof").value = q.as_of.slice(0, 10); $("#ticker").value = q.ticker || ""; $("#cik").value = q.cik || "";
+      if (!q.policies[$("#policy").value]) $("#policy").value = Object.keys(q.policies)[0];
+      $("#mode").value = "replay"; $("#mode").dispatchEvent(new Event("change"));
+      $("#go").focus();
+    });
+    box.append(b);
+  }
+}
+
+// ---------------------------------------------------------------- running
+$("#ask").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const body = {
+    question: $("#q").value.trim(), as_of: $("#asof").value, ticker: $("#ticker").value.trim() || null,
+    cik: $("#cik").value || null, policy: $("#policy").value, mode: $("#mode").value,
+  };
+  const headers = { "Content-Type": "application/json" };
+  if (body.mode === "live" && $("#key").value) headers.Authorization = "Bearer " + $("#key").value;
+  $("#go").disabled = true; $("#go").textContent = "Running…";
+  try {
+    const r = await fetch("/v1/questions", { method: "POST", headers, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (!r.ok) { showError(data.detail || r.statusText); done(); return; }
+    watch(data.run_id, body);
+  } catch (err) { showError("The server did not respond. Check that it is running."); done(); }
+});
+function done() { $("#go").disabled = false; $("#go").textContent = "Run"; }
+
+function showError(msg) {
+  const run = $("#run"); run.replaceChildren(el("h2", { text: "Trajectory" }), el("p", { class: "error", text: msg }));
+}
+
+function watch(runId, body) {
+  const run = $("#run");
+  current = { runId, body, steps: new Map() };
+  const status = el("span", { class: "chip", text: "routing" });
+  run.replaceChildren(
+    el("div", { class: "runhead" },
+      el("span", { class: "q", text: body.question }),
+      el("span", { class: "chip", text: body.mode === "live" ? "live" : "replay" }),
+      el("span", { class: "chip", text: body.policy }),
+      el("span", { class: "chip", text: "as of " + body.as_of }),
+      el("span", { class: "chip", id: "path", hidden: "" }),
+      status),
+    el("ol", { class: "steps", id: "steps" }),
+    el("div", { id: "result" }),
+  );
+  const es = new EventSource(`/v1/runs/${runId}/events`);
+  es.addEventListener("routed", (e) => {
+    const d = JSON.parse(e.data); const p = $("#path"); p.hidden = false;
+    p.textContent = `path ${d.path}: ${d.tools.join(", ")}`; p.title = d.reason;
+    status.textContent = "working";
+  });
+  es.addEventListener("step", (e) => addStep(JSON.parse(e.data)));
+  es.addEventListener("verified", (e) => { status.textContent = "verifying"; applyVerdicts(JSON.parse(e.data)); });
+  es.addEventListener("done", (e) => { const d = JSON.parse(e.data); status.textContent = d.outcome; status.className = "chip " + (d.outcome === "ok" ? "pass" : "warn"); showResult(d); es.close(); done(); });
+  es.addEventListener("error", (e) => {
+    if (e.data) { const d = JSON.parse(e.data); $("#result").replaceChildren(el("p", { class: "error", text: d.message })); status.textContent = "stopped"; status.className = "chip fail"; }
+    else if (es.readyState !== EventSource.CLOSED) return;
+    es.close(); done();
+  });
+}
+
+function addStep(s) {
+  const obs = s.observation || {};
+  const sig = el("div", { class: "signals" }, el("span", { class: "chip na", text: "awaiting verifier" }));
+  const li = el("li", { class: "step" },
+    el("div", { class: "stephead" },
+      el("span", { class: "idx", text: "step " + s.idx }),
+      el("span", { class: "tool", text: s.tool || "(no tool call)" }),
+      el("span", { class: "chip " + (obs.ok ? "pass" : "fail"), text: obs.ok ? "ok" : "error" }),
+      el("span", { class: "idx", text: `${s.tokens_in + s.tokens_out} tok · ${s.latency_ms} ms` })),
+    s.thought ? el("p", { class: "thought", text: s.thought.slice(0, 600) }) : null,
+    el("details", {}, el("summary", { text: "Arguments and result" }),
+      el("pre", { text: JSON.stringify(s.args, null, 2) }),
+      el("pre", { text: obs.ok ? JSON.stringify(obs.data, null, 2).slice(0, 8000) : "ERROR: " + obs.error })),
+    sig);
+  current.steps.set(s.idx, { li, sig });
+  $("#steps").append(li);
+}
+
+function applyVerdicts(v) {
+  if (v.error) $("#result").append(el("p", { class: "hint", text: "Verifier: " + v.error }));
+  for (const step of v.steps) {
+    const st = current.steps.get(step.idx); if (!st) continue;
+    st.sig.replaceChildren();
+    for (const [k, s] of Object.entries(step.signals)) {
+      const cls = !s.applicable ? "na" : s.passed ? "pass" : "fail";
+      st.sig.append(el("span", { class: "chip " + cls, title: `${SIGNAL_NAMES[k]}: ${s.reason}`, text: `${k} ${s.applicable ? s.score.toFixed(2) : "n/a"}` }));
+    }
+    if (!step.passed) st.li.classList.add("failed");
+    const failing = Object.entries(step.signals).filter(([, s]) => s.applicable && !s.passed);
+    for (const [k, s] of failing) st.sig.append(el("p", { class: "reason", text: `${k}: ${s.reason}` }));
+  }
+}
+
+function showResult(d) {
+  const verdict = d.correct == null ? el("span", { class: "chip na", text: "no gold answer" })
+    : el("span", { class: "chip " + (d.correct ? "pass" : "fail"), text: d.correct ? "correct" : "wrong" });
+  const box = el("div", { class: "answer" },
+    el("div", { class: "stephead" }, el("span", { class: "label", text: "Answer" }), verdict),
+    el("p", { class: "text", text: d.answer || "No answer was produced." }),
+    el("dl", { class: "facts" },
+      fact("Value", d.value == null ? "—" : big(d.value) + (d.unit ? " " + d.unit : "")),
+      fact("Gold value", big(d.expected_value)),
+      fact("Steps passing", `${d.steps_passed} of ${d.n_steps}`),
+      fact("Spent", usd(d.usd)),
+      fact("Cost on a cold journal", usd(d.list_usd)),
+      fact("Model calls from journal", `${d.cached_calls} of ${d.calls}`)),
+  );
+  if (d.citations && d.citations.length) box.append(el("details", {}, el("summary", { text: `${d.citations.length} citation(s)` }), el("pre", { text: JSON.stringify(d.citations, null, 2) })));
+  if (d.answer && d.outcome === "ok") box.append(seedPanel());
+  $("#result").append(box);
+}
+const fact = (k, v) => el("div", {}, el("dt", { text: k }), el("dd", { text: v }));
+
+// ---------------------------------------------------------------- seeded errors
+function seedPanel() {
+  const sel = el("select", { id: "seedkind", "aria-label": "Error to inject" });
+  for (const [k, s] of Object.entries(CONFIG.mutations)) sel.append(el("option", { value: k, text: `${k.replaceAll("_", " ")} (caught by ${s})` }));
+  const out = el("div");
+  const btn = el("button", { class: "btn ghost", type: "button", text: "Inject error and re-check" });
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    const r = await fetch(`/v1/runs/${current.runId}/seed-error`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: sel.value, cik: current.body.cik }) });
+    const d = await r.json(); btn.disabled = false;
+    if (!r.ok) { out.replaceChildren(el("p", { class: "reason", text: d.detail })); return; }
+    out.replaceChildren(
+      el("p", {}, el("span", { class: "chip " + (d.caught ? "pass" : "fail"), text: d.caught ? `caught by ${d.expected_signal}` : `missed by ${d.expected_signal}` })),
+      el("div", { class: "compare" }, side("Original", d.original, d.expected_signal), side("With injected error", d.mutated, d.expected_signal)));
+  });
+  return el("div", { class: "seed" },
+    el("span", { class: "label", text: "Test the verifier" }),
+    el("p", { class: "hint", text: "Corrupt this answer in a known way and score it again. Nothing is saved, and no model is called." }),
+    el("div", { class: "row" }, sel, btn), out);
+}
+function side(title, v, focus) {
+  const s = v.signals[focus];
+  return el("div", {}, el("span", { class: "label", text: title }), el("p", { class: "text", style: "margin:0", text: v.answer }),
+    el("span", { class: "chip " + (s.passed ? "pass" : "fail"), text: `${focus} ${s.score.toFixed(2)}` }), el("p", { class: "reason", text: s.reason }));
+}
+
+// ---------------------------------------------------------------- benchmarks
+let benchLoaded = false;
+async function loadBench() {
+  if (benchLoaded) return; benchLoaded = true;
+  const r = await (await fetch("/v1/results")).json();
+  const dev = r["mvp2.2_dev"];
+  if (dev) {
+    const rows = (dev.policies || dev.summaries || dev.results || []);
+    const list = Array.isArray(rows) ? rows : Object.values(rows);
+    table("#bench-table", ["Policy", "Accuracy", "95% CI", "Steps passing", "Unsupported claims", "$ per correct"], list.map((p) => [
+      p.policy, pct(p.d1_accuracy), p.d1_ci95 ? `${pct(p.d1_ci95[0])}–${pct(p.d1_ci95[1])}` : "—", pct(p.d3_step_pass_rate), pct(p.d2_unsupported_claim_rate), p.e1_cost_per_correct == null ? "—" : "$" + p.e1_cost_per_correct.toFixed(4)]));
+  }
+  const leak = r["a1_leak"];
+  if (leak) {
+    $("#leak-note").textContent = `Filings returned for ${leak.n_horizons} as-of dates between ${leak.horizon_range[0]} and ${leak.horizon_range[1]}, under three filters. A leak is a filing that was not yet public on that date.`;
+    const label = { none: "No date filter", period_end: "Fiscal period end", accepted_at: "SEC acceptance time (used)" };
+    table("#leak-table", ["Filter", "Returned", "Leaked", "Leak rate"], Object.entries(leak.filings).map(([k, v]) => [label[k] || k, v.returned, v.leaked, pct(v.pooled_rate)]));
+  }
+  const seed = r["b2_seeded"];
+  if (seed && seed.classes) {
+    table("#seed-table", ["Error class", "Signal", "Seeded", "Caught", "Recall"], Object.entries(seed.classes).map(([k, v]) => [k.replaceAll("_", " "), v.signal, v.seeded, v.caught, pct(v.recall)]));
+  } else if (seed) { $("#seed-table").append(el("pre", { text: JSON.stringify(seed, null, 2) })); }
+  const figs = [["f1_accuracy", "Accuracy by policy"], ["f3_frontier", "Cost against accuracy"], ["f5_signals", "Verifier signal pass rates"], ["f2_archetype", "Accuracy by question type"], ["f8_steps", "Steps per run"], ["f6_routing", "Routing paths"]];
+  for (const [f, c] of figs) $("#figs").append(el("figure", {}, el("img", { src: `/figures/${f}.png`, alt: c, loading: "lazy" }), el("figcaption", { text: c })));
+}
+const pct = (x) => x == null ? "—" : (x * 100).toFixed(1) + "%";
+function table(sel, head, rows) {
+  const t = el("table", {}, el("thead", {}, el("tr", {}, ...head.map((h) => el("th", { text: h })))));
+  const tb = el("tbody");
+  for (const r of rows) tb.append(el("tr", {}, ...r.map((c, i) => el("td", { class: i ? "num" : "", text: String(c) }))));
+  t.append(tb); $(sel).replaceChildren(t);
+}
+
+init();
+</script>
+</body>
+</html>

@@ -12,12 +12,35 @@ makes three separate guarantees hold at once:
 from __future__ import annotations
 
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any
 
 from financevault.config import settings
 from financevault.runtime import journal
 from financevault.runtime.budget import Ledger, price
+
+# Per-request override of `settings().replay`. The setting is process-wide, but the API serves
+# replayed and live questions from one process, so the choice has to travel with the request.
+# A ContextVar does that, and it follows the request into the worker thread that runs it.
+_replay: ContextVar[bool | None] = ContextVar("fv_replay", default=None)
+
+
+def replaying() -> bool:
+    override = _replay.get()
+    return settings().replay if override is None else override
+
+
+@contextmanager
+def replay_mode(enabled: bool) -> Iterator[None]:
+    """Force replay on or off for model calls made inside this block."""
+    token = _replay.set(enabled)
+    try:
+        yield
+    finally:
+        _replay.reset(token)
 
 
 @dataclass(frozen=True, slots=True)
@@ -155,7 +178,7 @@ def call(
             latency_ms=0,
         )
 
-    if settings().replay:
+    if replaying():
         raise journal.ReplayMiss(
             f"no journal entry for {hash_[:12]}… (model={model}, label={label!r}). "
             "Replay never falls back to a live call: that would make a 'free' replay cost "

@@ -1,0 +1,1069 @@
+{
+ "built_at": "2026-10-18T07:37:56+00:00",
+ "source": "eval/splits/mvp_150.jsonl",
+ "checked": 152,
+ "questions": [
+  {
+   "id": "aapl-netincomeloss-2025",
+   "question": "What was AAPL's net income in fiscal year 2025?",
+   "as_of": "2025-11-01",
+   "ticker": "AAPL",
+   "cik": "320193",
+   "archetype": "lookup",
+   "split": "train",
+   "expected_value": 112010000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.008638,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "aapl-netincomeloss-2024",
+   "question": "What was AAPL's net income in fiscal year 2024?",
+   "as_of": "2025-11-01",
+   "ticker": "AAPL",
+   "cik": "320193",
+   "archetype": "lookup",
+   "split": "test",
+   "expected_value": 93736000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.008539,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "aapl-netprofitmargin-2018",
+   "question": "What was AAPL's net profit margin in fiscal year 2018? Give the answer as a percentage to two decimal places.",
+   "as_of": "2020-10-30",
+   "ticker": "AAPL",
+   "cik": "320193",
+   "archetype": "ratio",
+   "split": "dev",
+   "expected_value": 22.41,
+   "expected_unit": "percent",
+   "policies": {
+    "b2-tools": {
+     "outcome": "max_steps",
+     "n_steps": 10,
+     "path": "P3",
+     "list_usd": 0.051058,
+     "verified": true,
+     "correct": false
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 5,
+     "path": "P3",
+     "list_usd": 0.053733,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "aapl-netincomeloss-2023",
+   "question": "What was AAPL's net income in fiscal year 2023?",
+   "as_of": "2025-11-01",
+   "ticker": "AAPL",
+   "cik": "320193",
+   "archetype": "lookup",
+   "split": "train",
+   "expected_value": 96995000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.006284,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "aapl-revenues-2018",
+   "question": "What was AAPL's total revenue in fiscal year 2018?",
+   "as_of": "2018-11-06",
+   "ticker": "AAPL",
+   "cik": "320193",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 265595000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.006928,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.017757,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "aapl-revenues-delta-2018",
+   "question": "By how much did AAPL's total revenue change from fiscal year 2017 to fiscal year 2018? Give the difference in dollars.",
+   "as_of": "2018-11-06",
+   "ticker": "AAPL",
+   "cik": "320193",
+   "archetype": "delta",
+   "split": "dev",
+   "expected_value": 36361000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 8,
+     "path": "P3",
+     "list_usd": 0.039876,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 9,
+     "path": "P3",
+     "list_usd": 0.166732,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "aapl-netprofitmargin-2017",
+   "question": "What was AAPL's net profit margin in fiscal year 2017? Give the answer as a percentage to two decimal places.",
+   "as_of": "2019-10-31",
+   "ticker": "AAPL",
+   "cik": "320193",
+   "archetype": "ratio",
+   "split": "dev",
+   "expected_value": 21.09,
+   "expected_unit": "percent",
+   "policies": {
+    "b2-tools": {
+     "outcome": "max_steps",
+     "n_steps": 10,
+     "path": "P3",
+     "list_usd": 0.079036,
+     "verified": true,
+     "correct": false
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 5,
+     "path": "P3",
+     "list_usd": 0.053019,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "aapl-grossprofit-delta-2025",
+   "question": "By how much did AAPL's gross profit change from fiscal year 2024 to fiscal year 2025? Give the difference in dollars.",
+   "as_of": "2025-11-01",
+   "ticker": "AAPL",
+   "cik": "320193",
+   "archetype": "delta",
+   "split": "dev",
+   "expected_value": 14518000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 6,
+     "path": "P3",
+     "list_usd": 0.031678,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 4,
+     "path": "P3",
+     "list_usd": 0.067534,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "aapl-grossprofit-2025",
+   "question": "What was AAPL's gross profit in fiscal year 2025?",
+   "as_of": "2025-11-01",
+   "ticker": "AAPL",
+   "cik": "320193",
+   "archetype": "lookup",
+   "split": "train",
+   "expected_value": 195201000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 3,
+     "path": "P2",
+     "list_usd": 0.011113,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "aapl-grossprofit-2024",
+   "question": "What was AAPL's gross profit in fiscal year 2024?",
+   "as_of": "2025-11-01",
+   "ticker": "AAPL",
+   "cik": "320193",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 180683000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 3,
+     "path": "P2",
+     "list_usd": 0.01142,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.017397,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "msft-netincomeloss-delta-2026",
+   "question": "By how much did MSFT's net income change from fiscal year 2025 to fiscal year 2026? Give the difference in dollars.",
+   "as_of": "2026-07-30",
+   "ticker": "MSFT",
+   "cik": "789019",
+   "archetype": "delta",
+   "split": "dev",
+   "expected_value": 31917000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "no_tool_call",
+     "n_steps": 4,
+     "path": "P3",
+     "list_usd": 0.017851,
+     "verified": true,
+     "correct": false
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 6,
+     "path": "P3",
+     "list_usd": 0.10254,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "msft-revenues-delta-2010",
+   "question": "By how much did MSFT's total revenue change from fiscal year 2009 to fiscal year 2010? Give the difference in dollars.",
+   "as_of": "2010-07-31",
+   "ticker": "MSFT",
+   "cik": "789019",
+   "archetype": "delta",
+   "split": "dev",
+   "expected_value": 4047000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "max_steps",
+     "n_steps": 10,
+     "path": "P3",
+     "list_usd": 0.054504,
+     "verified": true,
+     "correct": false
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 3,
+     "path": "P3",
+     "list_usd": 0.037437,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "msft-revenues-2008",
+   "question": "What was MSFT's total revenue in fiscal year 2008?",
+   "as_of": "2010-07-31",
+   "ticker": "MSFT",
+   "cik": "789019",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 60420000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.006557,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.018785,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "msft-grossmargin-2010",
+   "question": "What was MSFT's gross margin in fiscal year 2010? Give the answer as a percentage to two decimal places.",
+   "as_of": "2011-07-29",
+   "ticker": "MSFT",
+   "cik": "789019",
+   "archetype": "ratio",
+   "split": "dev",
+   "expected_value": 80.16,
+   "expected_unit": "percent",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 3,
+     "path": "P2",
+     "list_usd": 0.008736,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 6,
+     "path": "P2",
+     "list_usd": 0.038722,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "nvda-netincomeloss-delta-2026",
+   "question": "By how much did NVDA's net income change from fiscal year 2025 to fiscal year 2026? Give the difference in dollars.",
+   "as_of": "2026-02-26",
+   "ticker": "NVDA",
+   "cik": "1045810",
+   "archetype": "delta",
+   "split": "test",
+   "expected_value": 47187000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 4,
+     "path": "P3",
+     "list_usd": 0.022331,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 4,
+     "path": "P3",
+     "list_usd": 0.073011,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "nvda-revenues-2026",
+   "question": "What was NVDA's total revenue in fiscal year 2026?",
+   "as_of": "2026-02-26",
+   "ticker": "NVDA",
+   "cik": "1045810",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 215938000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.008691,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 3,
+     "path": "P2",
+     "list_usd": 0.03521,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "nvda-netprofitmargin-2025",
+   "question": "What was NVDA's net profit margin in fiscal year 2025? Give the answer as a percentage to two decimal places.",
+   "as_of": "2026-02-26",
+   "ticker": "NVDA",
+   "cik": "1045810",
+   "archetype": "ratio",
+   "split": "dev",
+   "expected_value": 55.85,
+   "expected_unit": "percent",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 3,
+     "path": "P3",
+     "list_usd": 0.012247,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 3,
+     "path": "P3",
+     "list_usd": 0.027401,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "nvda-revenues-2025",
+   "question": "What was NVDA's total revenue in fiscal year 2025?",
+   "as_of": "2026-02-26",
+   "ticker": "NVDA",
+   "cik": "1045810",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 130497000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.008522,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.016553,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "nvda-revenues-2024",
+   "question": "What was NVDA's total revenue in fiscal year 2024?",
+   "as_of": "2026-02-26",
+   "ticker": "NVDA",
+   "cik": "1045810",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 60922000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.010859,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.017504,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "jpm-assets-delta-2025",
+   "question": "By how much did JPM's total assets change from fiscal year 2024 to fiscal year 2025? Give the difference in dollars.",
+   "as_of": "2026-02-14",
+   "ticker": "JPM",
+   "cik": "19617",
+   "archetype": "delta",
+   "split": "dev",
+   "expected_value": 422086000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 3,
+     "path": "P3",
+     "list_usd": 0.011485,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 3,
+     "path": "P3",
+     "list_usd": 0.033023,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "brk-b-netincomeloss-2025",
+   "question": "What was BRK-B's net income in fiscal year 2025?",
+   "as_of": "2026-03-03",
+   "ticker": "BRK-B",
+   "cik": "1067983",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 66968000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.006493,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.017721,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "brk-b-netincomeloss-2024",
+   "question": "What was BRK-B's net income in fiscal year 2024?",
+   "as_of": "2026-03-03",
+   "ticker": "BRK-B",
+   "cik": "1067983",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 88995000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.006068,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.017535,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "brk-b-revenues-2024",
+   "question": "What was BRK-B's total revenue in fiscal year 2024?",
+   "as_of": "2026-03-03",
+   "ticker": "BRK-B",
+   "cik": "1067983",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 371433000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.006168,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.016807,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "brk-b-operatingincomeloss-2011",
+   "question": "What was BRK-B's operating income in fiscal year 2011?",
+   "as_of": "2013-03-02",
+   "ticker": "BRK-B",
+   "cik": "1067983",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 17184000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.006856,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.019474,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "wmt-operatingincomeloss-2025",
+   "question": "What was WMT's operating income in fiscal year 2025?",
+   "as_of": "2026-03-14",
+   "ticker": "WMT",
+   "cik": "104169",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 29348000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.009085,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.017378,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "cost-netincomeloss-2025",
+   "question": "What was COST's net income in fiscal year 2025?",
+   "as_of": "2025-10-09",
+   "ticker": "COST",
+   "cik": "909832",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 8099000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.008358,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.018289,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "cost-operatingincomeloss-2025",
+   "question": "What was COST's operating income in fiscal year 2025?",
+   "as_of": "2025-10-09",
+   "ticker": "COST",
+   "cik": "909832",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 10383000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.006596,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.023812,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "xom-netincomeloss-2025",
+   "question": "What was XOM's net income in fiscal year 2025?",
+   "as_of": "2026-02-19",
+   "ticker": "XOM",
+   "cik": "34088",
+   "archetype": "lookup",
+   "split": "train",
+   "expected_value": 28844000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "no_tool_call",
+     "n_steps": 3,
+     "path": "P2",
+     "list_usd": 0.011152,
+     "verified": true,
+     "correct": false
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.01743,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "xom-revenues-2025",
+   "question": "What was XOM's total revenue in fiscal year 2025?",
+   "as_of": "2026-02-19",
+   "ticker": "XOM",
+   "cik": "34088",
+   "archetype": "lookup",
+   "split": "train",
+   "expected_value": 332238000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "no_tool_call",
+     "n_steps": 3,
+     "path": "P2",
+     "list_usd": 0.010143,
+     "verified": true,
+     "correct": false
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.017374,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "xom-netprofitmargin-2024",
+   "question": "What was XOM's net profit margin in fiscal year 2024? Give the answer as a percentage to two decimal places.",
+   "as_of": "2026-02-19",
+   "ticker": "XOM",
+   "cik": "34088",
+   "archetype": "ratio",
+   "split": "dev",
+   "expected_value": 9.63,
+   "expected_unit": "percent",
+   "policies": {
+    "b2-tools": {
+     "outcome": "max_steps",
+     "n_steps": 10,
+     "path": "P3",
+     "list_usd": 0.039284,
+     "verified": true,
+     "correct": false
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 4,
+     "path": "P3",
+     "list_usd": 0.03307,
+     "verified": true,
+     "correct": false
+    }
+   }
+  },
+  {
+   "id": "xom-incometaxexpensebenefit-2024",
+   "question": "What was XOM's income tax expense in fiscal year 2024?",
+   "as_of": "2026-02-19",
+   "ticker": "XOM",
+   "cik": "34088",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 13810000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.006892,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.016721,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "xom-researchanddevelopmentexpense-delta-2025",
+   "question": "By how much did XOM's research and development expense change from fiscal year 2024 to fiscal year 2025? Give the difference in dollars.",
+   "as_of": "2026-02-19",
+   "ticker": "XOM",
+   "cik": "34088",
+   "archetype": "delta",
+   "split": "dev",
+   "expected_value": 200000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "max_steps",
+     "n_steps": 10,
+     "path": "P3",
+     "list_usd": 0.044322,
+     "verified": true,
+     "correct": false
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 5,
+     "path": "P3",
+     "list_usd": 0.041866,
+     "verified": true,
+     "correct": false
+    }
+   }
+  },
+  {
+   "id": "jnj-netincomeloss-2023",
+   "question": "What was JNJ's net income in fiscal year 2023?",
+   "as_of": "2026-02-12",
+   "ticker": "JNJ",
+   "cik": "200406",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 35153000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.006194,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.017818,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "cat-netincomeloss-delta-2010",
+   "question": "By how much did CAT's net income change from fiscal year 2009 to fiscal year 2010? Give the difference in dollars.",
+   "as_of": "2011-02-23",
+   "ticker": "CAT",
+   "cik": "18230",
+   "archetype": "delta",
+   "split": "dev",
+   "expected_value": 1805000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 8,
+     "path": "P3",
+     "list_usd": 0.061176,
+     "verified": true,
+     "correct": false
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 5,
+     "path": "P3",
+     "list_usd": 0.060353,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "cat-operatingincomeloss-2024",
+   "question": "What was CAT's operating income in fiscal year 2024?",
+   "as_of": "2026-02-14",
+   "ticker": "CAT",
+   "cik": "18230",
+   "archetype": "lookup",
+   "split": "dev",
+   "expected_value": 13072000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.006374,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 2,
+     "path": "P2",
+     "list_usd": 0.017197,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "aapl-vs-jnj-grossprofit-2024",
+   "question": "Which had higher gross profit in fiscal year 2024, AAPL or JNJ? Give the difference in dollars as a positive number.",
+   "as_of": "2026-02-12",
+   "ticker": "AAPL",
+   "cik": "320193",
+   "archetype": "cross_company",
+   "split": "train",
+   "expected_value": 119333000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 5,
+     "path": "P3",
+     "list_usd": 0.050115,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "msft-vs-nvda-grossprofit-2026",
+   "question": "Which had higher gross profit in fiscal year 2026, MSFT or NVDA? Give the difference in dollars as a positive number.",
+   "as_of": "2026-07-30",
+   "ticker": "MSFT",
+   "cik": "789019",
+   "archetype": "cross_company",
+   "split": "dev",
+   "expected_value": 72002000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 4,
+     "path": "P3",
+     "list_usd": 0.016372,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 3,
+     "path": "P3",
+     "list_usd": 0.045518,
+     "verified": true,
+     "correct": true
+    }
+   }
+  },
+  {
+   "id": "aapl-vs-jpm-netincomeloss-2023",
+   "question": "Which had higher net income in fiscal year 2023, AAPL or JPM? Give the difference in dollars as a positive number.",
+   "as_of": "2026-02-14",
+   "ticker": "AAPL",
+   "cik": "320193",
+   "archetype": "cross_company",
+   "split": "dev",
+   "expected_value": 47443000000.0,
+   "expected_unit": "USD",
+   "policies": {
+    "b2-tools": {
+     "outcome": "ok",
+     "n_steps": 8,
+     "path": "P3",
+     "list_usd": 0.038173,
+     "verified": true,
+     "correct": true
+    },
+    "b3-frontier": {
+     "outcome": "ok",
+     "n_steps": 7,
+     "path": "P3",
+     "list_usd": 0.070952,
+     "verified": true,
+     "correct": true
+    }
+   }
+  }
+ ]
+}

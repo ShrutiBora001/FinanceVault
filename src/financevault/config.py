@@ -60,6 +60,16 @@ class Settings(BaseSettings):
     # rather than a live call, so a replay can never silently cost money.
     replay: bool = False
 
+    # The HTTP API (`financevault.api`). Replayed questions are free and open to anyone; a
+    # live question spends real money, so it needs this key as a bearer token. Empty means
+    # live mode is off entirely, which is the safe default for a public deployment.
+    api_key: str = ""
+    # Ceiling on live spend per API process per UTC day, in list dollars. Each run is also
+    # held to `max_usd`; this bounds the total if the key leaks.
+    api_daily_usd: float = 2.00
+    # Runs executing at once. Each holds a worker thread and a pool connection.
+    api_max_concurrent: int = 4
+
     # SEC requires a descriptive User-Agent with contact details on every request.
     sec_user_agent: str = "FinanceVault research (sb9880@nyu.edu)"
 

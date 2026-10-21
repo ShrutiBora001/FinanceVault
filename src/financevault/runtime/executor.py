@@ -21,7 +21,8 @@ from __future__ import annotations
 import json
 import time
 import uuid
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from financevault.config import settings
@@ -119,6 +120,8 @@ def execute(
     max_usd: float | None = None,
     force_path: str | None = None,
     persist: bool = True,
+    run_id: str | None = None,
+    on_event: Callable[[str, dict], None] | None = None,
 ) -> Run:
     """Run one episode and return its trajectory.
 
@@ -126,8 +129,18 @@ def execute(
     needs it: with sampling parameters gone and every call journalled, the only way to get
     structurally different trajectories for the same question is to change the toolset the
     agent has. It also saves the router call, which a fixed path does not need.
+
+    `on_event` lets a caller watch the run as it happens -- the API streams it to a browser.
+    It receives `("routed", ...)` once and `("step", ...)` per step, and is purely an
+    observer: nothing it does changes the trajectory, so a watched run and an unwatched one
+    journal identically.
     """
     cfg = settings()
+
+    def emit(kind: str, payload: dict) -> None:
+        if on_event is not None:
+            on_event(kind, payload)
+
     model = model or cfg.analyst_model
     ledger = Ledger(
         max_usd=max_usd if max_usd is not None else cfg.max_usd,
@@ -165,8 +178,10 @@ def execute(
         }
     ]
 
+    emit("routed", {"path": route.path, "tools": list(route.tools), "reason": route.reason})
+
     run = Run(
-        id=str(uuid.uuid4()),
+        id=run_id or str(uuid.uuid4()),
         question=question,
         as_of=as_of,
         policy=policy,
@@ -222,6 +237,7 @@ def execute(
                     latency_ms=latency_ms,
                 )
             )
+            emit("step", asdict(run.steps[-1]))
 
             if not nudged:
                 # One corrective attempt. The prose usually contains a complete answer, so
@@ -256,6 +272,7 @@ def execute(
                     latency_ms=latency_ms,
                 )
             )
+            emit("step", asdict(run.steps[-1]))
 
             tool_results.append(
                 {

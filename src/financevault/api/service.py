@@ -18,8 +18,10 @@ the journal entries the eval sweep wrote.
 
 from __future__ import annotations
 
+import contextvars
 import json
 import threading
+import time
 import traceback
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -31,6 +33,7 @@ from typing import Any
 from financevault import verify
 from financevault.config import settings
 from financevault.env.asof import AsOf
+from financevault.obs import RUN_SECONDS, RUNS, tracer
 from financevault.runtime import executor, llm
 from financevault.runtime.budget import Ledger
 from financevault.runtime.journal import ReplayMiss
@@ -168,13 +171,21 @@ def submit(req: Request) -> str:
     run_id = str(uuid.uuid4())
     stream = STREAMS.create(run_id)
 
+    mode = "live" if req.live else "replay"
+
     def task() -> None:
+        started = time.monotonic()
+        attrs = {"run_id": run_id, "policy": req.policy, "mode": mode}
         try:
-            _run(run_id, req, stream)
+            with tracer.start_as_current_span("run", attributes=attrs):
+                outcome = _run(run_id, req, stream)
+            RUNS.labels(req.policy, mode, outcome).inc()
+            RUN_SECONDS.labels(req.policy, mode).observe(time.monotonic() - started)
         finally:
             slots.release()
 
-    pool.submit(task)
+    # A copied context carries the request's trace into the worker thread.
+    pool.submit(contextvars.copy_context().run, task)
     return run_id
 
 
@@ -199,7 +210,9 @@ def _verdicts_json(verdicts: list[verify.StepVerdict]) -> list[dict]:
     ]
 
 
-def _run(run_id: str, req: Request, stream: Stream) -> None:
+def _run(run_id: str, req: Request, stream: Stream) -> str:
+    """Execute, verify and stream one run. Returns its outcome, for the metrics."""
+    outcome = "error"
     mode = "live" if req.live else "replay"
     stream.publish(
         "accepted",
@@ -250,10 +263,11 @@ def _run(run_id: str, req: Request, stream: Stream) -> None:
             )
 
         correct = verify.answered_correctly(verdicts) if req.expected_value is not None else None
+        summary = run.summary()
         stream.publish(
             "done",
             {
-                **run.summary(),
+                **summary,
                 "citations": run.citations,
                 "correct": correct,
                 "expected_value": req.expected_value,
@@ -261,7 +275,9 @@ def _run(run_id: str, req: Request, stream: Stream) -> None:
                 "mode": mode,
             },
         )
+        outcome = summary["outcome"]
     except ReplayMiss:
+        outcome = "replay_miss"
         stream.publish(
             "error",
             {
@@ -278,6 +294,7 @@ def _run(run_id: str, req: Request, stream: Stream) -> None:
     finally:
         if spent:
             SPEND.add(spent)
+    return outcome
 
 
 # ---------------------------------------------------------------- reading stored runs

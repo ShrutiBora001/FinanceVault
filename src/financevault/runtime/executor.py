@@ -28,6 +28,7 @@ from typing import Any
 from financevault.config import settings
 from financevault.env import coverage
 from financevault.env.asof import AsOf
+from financevault.obs import TOOL_CALLS, TOOL_SECONDS, tracer
 from financevault.runtime import llm, router
 from financevault.runtime.budget import BudgetExceeded, Ledger
 from financevault.store import pg
@@ -256,7 +257,14 @@ def execute(
         terminated = False
 
         for call in completion.tool_calls:
-            result = REGISTRY.dispatch(call["name"], call["input"], ctx)
+            # The model picks the name, so an invented one is bucketed to bound label values.
+            tool_label = call["name"] if REGISTRY.get(call["name"]) else "unknown"
+            tool_started = time.monotonic()
+            with tracer.start_as_current_span(f"tool.{tool_label}") as span:
+                result = REGISTRY.dispatch(call["name"], call["input"], ctx)
+                span.set_attribute("ok", result.ok)
+            TOOL_SECONDS.labels(tool_label).observe(time.monotonic() - tool_started)
+            TOOL_CALLS.labels(tool_label, str(result.ok).lower()).inc()
             result_json = result.to_json()
 
             run.steps.append(

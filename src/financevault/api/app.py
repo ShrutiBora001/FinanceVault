@@ -10,15 +10,18 @@ from __future__ import annotations
 import asyncio
 import hmac
 import json
+import time
 from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
+from financevault import obs
 from financevault.config import settings
 from financevault.store import pg
 
@@ -33,6 +36,26 @@ app = FastAPI(
     version="0.2.0",
     description="Point-in-time-correct financial tool use, with every step verified.",
 )
+
+
+obs.setup_tracing(app)
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics() -> Response:
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+@app.middleware("http")
+async def _timed(request: Request, call_next):
+    started = time.monotonic()
+    response = await call_next(request)
+    # The route template, not the raw path: one series per endpoint, not per run id.
+    route = getattr(request.scope.get("route"), "path", "unmatched")
+    obs.HTTP_SECONDS.labels(request.method, route, response.status_code).observe(
+        time.monotonic() - started
+    )
+    return response
 
 
 @app.exception_handler(service.Rejected)

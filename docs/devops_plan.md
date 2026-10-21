@@ -38,4 +38,5 @@ Ordered so every phase is usable on its own and the expensive cloud step comes l
 |---|---|---|
 | 1 | **Built**, CI job waits on `FV_CI_FIXTURE_URL` | `make gate`: 71/71 question-policy pairs reproduce, 3.6 s, $0.00. A one-space change to `executor.SYSTEM` gives 4/4 journal-miss regressions on `--limit 3`, exit 1. A tampered baseline gives drift, exit 1. `tests/test_eval_gate.py`: 7 pass. |
 | 2 | **Built (build + push)**; GitOps tag bump lands with Phase 4 | `.github/workflows/image.yml`, owner name lowercased for GHCR. Not yet run on GitHub. |
-| 3–7 | Not started | |
+| 3 | **Built**; local stack not yet run | `financevault.obs`: `/metrics` (HTTP latency by route, runs by outcome, run duration, model calls live vs cached, spend, tool latency and errors) and OTLP traces. One real replayed question gave 27 run/model/tool spans, all in the HTTP request's trace, and the run span carries `run_id`. The gate still reproduces 71/71, so instrumentation changes no journal key. `make obs-up` + `OBS=1 make serve`; Grafana on :53000. The Docker image pull hung on this machine, so the compose stack itself is unverified. |
+| 4–7 | Not started | |

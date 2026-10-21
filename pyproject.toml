@@ -24,6 +24,11 @@ dependencies = [
     "lxml>=5.2",
     "beautifulsoup4>=4.12",
     "yfinance>=0.2.40",
+    # Metrics and traces (financevault.obs). Spans are no-ops until an OTLP endpoint is set.
+    "prometheus-client>=0.21",
+    "opentelemetry-sdk>=1.28",
+    "opentelemetry-exporter-otlp-proto-http>=1.28",
+    "opentelemetry-instrumentation-fastapi>=0.49b0",
 ]
 
 [project.optional-dependencies]

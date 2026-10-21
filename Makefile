@@ -22,7 +22,7 @@ RUFF   := $(VENV)/bin/ruff
 # successful no-op run.
 .PHONY: help venv venv-embed up down logs psql redis-cli migrate reset test lint fmt clean \
         split eval figures replay determinism gate leak calibrate rollout sft mvp \
-        serve catalog image dump restore
+        serve catalog image dump restore obs-up obs-down
 
 help:  ## show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -99,11 +99,18 @@ mvp:  ## the whole MVP1 chain, printing every exit metric
 
 # ---------------------------------------------------------------- serving
 
-serve:  ## run the API and demo page on :8000, reloading on change
+serve:  ## run the API and demo page on :8000, reloading on change (OBS=1: export traces)
+	$(if $(OBS),OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:54318 OTEL_SERVICE_NAME=financevault-api) \
 	$(VENV)/bin/uvicorn financevault.api.app:app --reload --port $(or $(PORT),8000)
 
 catalog:  ## list the eval questions that replay from the journal (the demo's question list)
 	$(PY) -m scripts.demo_catalog $(ARGS)
+
+obs-up:  ## start collector, Tempo, Prometheus, Grafana (:53000); then OBS=1 make serve
+	$(DOCKER) compose -f infra/observability/docker-compose.yml up -d
+
+obs-down:  ## stop the observability stack
+	$(DOCKER) compose -f infra/observability/docker-compose.yml down
 
 image:  ## build the deployable container image
 	$(DOCKER) build -t financevault:latest .

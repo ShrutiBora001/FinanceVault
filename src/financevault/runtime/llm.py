@@ -18,7 +18,10 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any
 
+from opentelemetry import trace
+
 from financevault.config import settings
+from financevault.obs import MODEL_CALLS, MODEL_USD, tracer
 from financevault.runtime import journal
 from financevault.runtime.budget import Ledger, price
 
@@ -119,6 +122,7 @@ def _parse(response: dict) -> tuple[str, list[dict]]:
     return "".join(text_parts), tool_calls
 
 
+@tracer.start_as_current_span("model.call")
 def call(
     model: str,
     messages: list[dict],
@@ -156,8 +160,14 @@ def call(
         max_tokens=max_tokens,
     )
 
+    span = trace.get_current_span()
+    span.set_attribute("model", model)
+    span.set_attribute("label", label)
+
     entry = journal.get(hash_)
+    span.set_attribute("cached", entry is not None)
     if entry is not None:
+        MODEL_CALLS.labels(model, "true").inc()
         text, tool_calls = _parse(entry.response)
         ledger.charge(
             model,
@@ -222,6 +232,8 @@ def call(
         cost_usd=cost,
     )
     ledger.charge(model, tokens_in, tokens_out, latency_ms=latency_ms, cached=False, label=label)
+    MODEL_CALLS.labels(model, "false").inc()
+    MODEL_USD.labels(model).inc(cost)
 
     text, tool_calls = _parse(response)
     return Completion(

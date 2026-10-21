@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: financevault
+    folder: FinanceVault
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards
